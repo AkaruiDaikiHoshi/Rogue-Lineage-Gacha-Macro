@@ -26,7 +26,8 @@ global SettingDefaults := {"WebhookURL": ""
 	, "DisconnectDetection": "Off"
 	, "WebhookName": "Gacha Macro Webhook"
 	, "WBProfilePictureFile": ""
-	, "DiscordUserID": 0}
+	, "DiscordUserID": 0
+	, "ClippingKey": "None"}
 
 LoadVariables(SettingDefaults, IniFile, IniFileSection)
 
@@ -69,7 +70,6 @@ global WebhookName, WebhookNameSaveInput
 global WBProfilePictureFileSaveInput, WBProfilePictureFile
 
 Gui, Submit, NoHide
-sleep, 250
 
 if (WebhookName && !WebhookNameSaveInput) then
 {
@@ -102,49 +102,73 @@ if (ScreenshotWebhookURL == "" && WebhookURL != "") then
 
 LoadVariables(SettingDefaults, IniFile, IniFileSection)
 
-GuiControl,, WBPFP, % WBProfilePictureFile
-GuiControl, Move, WBPFP, w100 h100
-
-if (WebhookURL && WebhookName && WBProfilePictureFile or WBProfilePictureFileSaveInput) then
+if (A_GuiControl == "Set Name/PFP") then
 {
-	if (WBProfilePictureFileSaveInput) then
-	{
-		Base64 := FileToBase64(WBProfilePictureFileSaveInput)
-	}
-	else
-	{
-		Base64 := FileToBase64(WBProfilePictureFile)
-	}
-	
-	Payload := "{"
-    . """name"":""" WebhookName ""","
-    . """avatar"":""data:image/png;base64," Base64 """"
-    . "}"
+	GuiControl,, WBPFP, % WBProfilePictureFile
+	GuiControl, Move, WBPFP, w100 h100
 
-	Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-	Http.Open("PATCH", WebhookURL, false)
-	Http.SetRequestHeader("Content-Type", "application/json")
-	Http.Send(Payload)
-	
-	sleep, 250
-	
-	Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-	Http.Open("PATCH", ScreenshotWebhookURL, false)
-	Http.SetRequestHeader("Content-Type", "application/json")
-	Http.Send(Payload)
+	if (WebhookURL && WebhookName && WBProfilePictureFile or WBProfilePictureFileSaveInput) then
+	{
+		if (WBProfilePictureFileSaveInput) then
+		{
+			Base64 := FileToBase64(WBProfilePictureFileSaveInput)
+		}
+		else
+		{
+			Base64 := FileToBase64(WBProfilePictureFile)
+		}
+		
+		Payload := "{"
+		. """name"":""" WebhookName ""","
+		. """avatar"":""data:image/png;base64," Base64 """"
+		. "}"
+
+		Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		Http.Open("PATCH", WebhookURL, false)
+		Http.SetRequestHeader("Content-Type", "application/json")
+		Http.Send(Payload)
+		
+		sleep, 250
+		
+		Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		Http.Open("PATCH", ScreenshotWebhookURL, false)
+		Http.SetRequestHeader("Content-Type", "application/json")
+		Http.Send(Payload)
+	}
 }
 return
 
 
-OpenGui:
+KeyRecorder:
+global KeysPressed
 Gui, Submit, NoHide
-if !WinExist("Webhook Editor Gui") then
+
+Letters := ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"
+	, "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+Numbers := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
+Functions := ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F2"]
+SpecialCharacters := ["Control", "Shift", "Tab", "Alt"]
+
+Loop
 {
-	CreateGui2()
-}
-else
-{
-	Gui, 2:Hide
+	for index, value in SpecialCharacters
+	{
+		if GetKeyState(value, "P") then
+		{
+			for index2, value2 in KeysPressed
+			{
+				if (value != value2) then
+				{
+					continue
+				}
+				else
+				{
+					break
+				}
+			}
+			KeysPressed.Push(value)
+		}
+	}
 }
 return
 
@@ -181,6 +205,18 @@ IniWrite, % WBProfilePictureFileSaveInput, % IniFile, % IniFileSection, WBProfil
 return
 
 
+OpenAboutGui:
+if !WinExist("About Settings/Webhooks Gui") then
+{
+	CreateGui2()
+}
+else
+{
+	Gui, 2:Hide
+}
+return
+
+
 EasterEgg:
 global EasterEggClicks, EasterEggClicksTime
 Gui, Submit, NoHide
@@ -213,29 +249,39 @@ CreateGui() {
 	static TitleText, DummyText
 	
 	Gui1_Name := 1
-	Gui_Width := 500
+	Gui_Width := 900
+	Gui1_Width := 500
+	Gui2_Width := 400
 	Gui_Height := 300
 	Gui_XPos := (A_ScreenWidth // 2) - (Gui_Width // 2)
-	Gui_YPos := (A_ScreenHeight // 2) - (Gui_Height // 2)
+	Gui_YPos := (A_ScreenHeight // 4) - (Gui_Height // 2) ; (A_ScreenHeight // 2) - (Gui_Height // 2)
 	GuiMainColor := "111111"
 	GuiTextColor := "E4F0F6"
 	GuiFont := "MS Sans Serif"
 	
+	; GUI 1 -------------------------------------
+	
 	Gui, %Gui1_Name%:New
 	Gui, %Gui1_Name%:Color, c%GuiMainColor%
 	Gui, %Gui1_Name%:Font, c%GuiTextColor% s12, %GuiFont%
-	Draw_Outline(Gui1_Name, 0, 0, Gui_Width, Gui_Height, GuiTextColor, 2)
+	Draw_Outline(Gui1_Name, 0, 0, Gui1_Width, Gui_Height, GuiTextColor, 2)
 	
 	Gui, Add, Text, vDummyText x-1000 y-1000 w0 h0, Dummy Text
 	
 	Gui, %Gui1_Name%:Add, Text, vTitleText +0x200 y10, Auto FF Gacha Settings
 	GuiControlGet, Pos, Pos, TitleText
-	GuiControl, %Gui1_Name%:Move, TitleText, % "x" ((Gui_Width - PosW) // 2) + 2
-	Draw_Line(Gui1_Name, 0, 35, Gui_Width, 2, GuiTextColor)
-	Draw_Line(Gui1_Name, Gui_Width // 2, 35, 2, Gui_Height - 35, GuiTextColor)
+	GuiControl, %Gui1_Name%:Move, TitleText, % "x" ((Gui1_Width - PosW) // 2) + 2
+	Draw_Line(Gui1_Name, 0, 35, Gui1_Width, 2, GuiTextColor)
+	Draw_Line(Gui1_Name, Gui1_Width // 2, 35, 2, Gui_Height - 35, GuiTextColor)
 	Gui, %Gui1_Name%:Font, c%GuiTextColor% s10 norm, %GuiFont%
 	
-	Gui, %Gui1_Name%:Add, Text, x10 y50, Webhook URL
+	if (WBProfilePictureFile != "" && FileExist(WBProfilePictureFile)) then
+	{
+		Gui, %Gui1_Name%:Add, Picture, gEasterEgg vWBPFP x650 y183 w100 h100, % WBProfilePictureFile
+	}
+	
+	;Gui, %Gui1_Name%:Add, Text, x10 y50, Webhook URL
+	Gui, %Gui1_Name%:Add, Text, x10 y50, Clipping
 	Gui, %Gui1_Name%:Add, Text, x10 y80, Chair Slot
 	Gui, %Gui1_Name%:Add, Text, x10 y110, Force Field Wait Time
 	Gui, %Gui1_Name%:Add, Text, x10 y140, Force Field Cutoff
@@ -254,7 +300,8 @@ CreateGui() {
 	
 	Gui, %Gui1_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
 	
-	Gui, %Gui1_Name%:Add, Button, gOpenGui x115 y45 h25, Webhook Editor
+	;Gui, %Gui1_Name%:Add, Button, gOpenGui x115 y45 h25, Webhook Editor
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vClippingKeySaveInput x115 y45 w111 h25, % ClippingKeyText
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vChairSlotSaveInput Number x186 y75 w40 h25, % ChairSlot
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldWaitTimeSaveInput Number x186 y105 w40 h25, % ForceFieldWaitTime
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldCutoffSaveInput Number x186 y135 w40 h25, % ForceFieldCutoff
@@ -295,7 +342,34 @@ CreateGui() {
 	else
 		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vDisconnectDetectionSaveInput x436 y195 w40, % "Off||On"
 		
-	Gui, %Gui1_Name%:Add, Button, x370 y255 w110 h25, About Settings
+	Gui, %Gui1_Name%:Add, Button, gOpenAboutGui x370 y255 w110 h25, About Settings
+	
+	; GUI 2 -------------------------------------
+	
+	Gui, %Gui1_Name%:Font, c%GuiTextColor% s12 norm, %GuiFont%
+	Gui, %Gui1_Name%:Add, Text, x614 y85 w250 h25, Webhook Customization
+	Gui, %Gui1_Name%:Font, c%GuiTextColor% s10 norm, %GuiFont%
+	
+	Draw_Outline(Gui1_Name, Gui1_Width - 1, 0, Gui2_Width, Gui_Height, GuiTextColor, 2)
+	Draw_Line(Gui1_Name, Gui1_Width - 1, 75, Gui2_Width, 2, GuiTextColor)
+	
+	Gui, %Gui1_Name%:Add, Text, x510 y15 w250 h25, Webhook URL
+	Gui, %Gui1_Name%:Add, Text, x510 y45 w250 h25, Screenshot Webhook URL
+	Gui, %Gui1_Name%:Add, Text, x510 y115 h25, Name
+	Gui, %Gui1_Name%:Add, Text, x510 y147 h25, Profile Picture
+	Gui, %Gui1_Name%:Add, Text, x510 y175 h25, Discord User ID
+	
+	Gui, %Gui1_Name%:Add, Button, x760 y255 w120 h25, About Webhooks
+	Gui, %Gui1_Name%:Add, Button, gWebhookTester x520 y255 w120 h25, Webhook Tester
+	Gui, %Gui1_Name%:Add, Button, gFileSelectFile x600 y143 h25, Select File (Image File)
+	Gui, %Gui1_Name%:Add, Button, gUpdateSettings x772 y124 h25, Set Name/PFP
+	
+	Gui, %Gui1_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
+	
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vWebhookURLSaveInput x610 y13 w270 h25, % WebhookURL
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vScreenshotWebhookURLSaveInput x685 y43 w195 h25, % ScreenshotWebhookURL
+	Gui, %Gui1_Name%:Add, Edit, vWebhookNameSaveInput x555 y113 w150 h25, % WebhookName
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vDiscordUserIDSaveInput Number x520 y200 w120 h25, % DiscordUserID
 	
 	OnMessage(0x201, "WM_LBUTTONDOWN")
 	Gui, %Gui1_Name%:+AlwaysOnTop +ToolWindow -Caption
@@ -305,56 +379,37 @@ CreateGui() {
 
 
 CreateGui2() {
-	global
 	static TitleText, DummyText
 	
-	Gui2_Name := 2
-	Gui_Width := 400
+	Gui1_Name := 2
+	Gui_Width := 900
+	Gui1_Width := 500
+	Gui2_Width := 400
 	Gui_Height := 300
-	WinGetPos, Main_Gui_X, Main_Gui_Y, Main_Gui_W, Main_Gui_H, Main Gui
-	;Gui_XPos := Main_Gui_X + ((Main_Gui_W - Gui_Width) / 2)
-	Gui_XPos := Main_Gui_X + Main_Gui_W - 1
-	Gui_YPos := Main_Gui_Y + ((Main_Gui_H - Gui_Height) / 2)
+	WinGetPos, Main_Gui_XPos, Main_Gui_YPos, Main_Gui_Width, Main_Gui_Height, Main Gui
+	Gui_XPos := Main_Gui_XPos
+	Gui_YPos := Main_Gui_YPos + Main_Gui_Height - 2
 	GuiMainColor := "111111"
 	GuiTextColor := "E4F0F6"
 	GuiFont := "MS Sans Serif"
 	
-	Gui, %Gui2_Name%:New
-	Gui, %Gui2_Name%:Color, c%GuiMainColor%
+	; GUI 1 -------------------------------------
 	
-	Gui, %Gui2_Name%:Font, c%GuiTextColor% s12 norm, %GuiFont%
-	Gui, %Gui2_Name%:Add, Text, x114 y85 w250 h25, Webhook Customization
-	Gui, %Gui2_Name%:Font, c%GuiTextColor% s10 norm, %GuiFont%
+	Gui, %Gui1_Name%:New
+	Gui, %Gui1_Name%:Color, c%GuiMainColor%
+	Draw_Outline(Gui1_Name, 0, 0, Gui1_Width, Gui_Height, GuiTextColor, 2)
 	
-	Draw_Outline(Gui2_Name, 0, 0, Gui_Width, Gui_Height, GuiTextColor, 2)
-	Draw_Line(Gui2_Name, 0, 75, Gui_Width, 2, GuiTextColor)
+	Gui, %Gui1_Name%:Add, Text, vDummyText x-1000 y-1000 w0 h0, Dummy Text
 	
-	Gui, %Gui2_Name%:Add, Text, vDummyText x-1000 y-1000 w0 h0, Dummy Text
+	Gui, %Gui1_Name%:Font, c%GuiTextColor% s10 norm, %GuiFont%
 	
-	Gui, %Gui2_Name%:Add, Text, x10 y15 w250 h25, Webhook URL
-	Gui, %Gui2_Name%:Add, Text, x10 y45 w250 h25, Screenshot Webhook URL
-	Gui, %Gui2_Name%:Add, Text, x10 y115 h25, Name
-	Gui, %Gui2_Name%:Add, Text, x10 y147 h25, Profile Picture
-	Gui, %Gui2_Name%:Add, Text, x10 y175 h25, Discord User ID
+	; GUI 2 -------------------------------------
 	
-	;Gui, %Gui2_Name%:Add, Button, gUpdateSettings x292 y30 w100 h25, Set URL(s)
-	Gui, %Gui2_Name%:Add, Button, x260 y255 w120 h25, About Webhooks
-	Gui, %Gui2_Name%:Add, Button, gWebhookTester x20 y255 w120 h25, Webhook Tester
-	Gui, %Gui2_Name%:Add, Button, gFileSelectFile x100 y143 h25, Select File (Image File)
-	Gui, %Gui2_Name%:Add, Button, gUpdateSettings x272 y124 h25, Set Name/PFP
-	
-	Gui, %Gui2_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
-	
-	Gui, %Gui2_Name%:Add, Edit, gUpdateSettings vWebhookURLSaveInput x110 y13 w270 h25, % WebhookURL
-	Gui, %Gui2_Name%:Add, Edit, gUpdateSettings vScreenshotWebhookURLSaveInput x185 y43 w195 h25, % ScreenshotWebhookURL
-	Gui, %Gui2_Name%:Add, Edit, vWebhookNameSaveInput x55 y113 w150 h25, % WebhookName
-	Gui, %Gui2_Name%:Add, Edit, gUpdateSettings vDiscordUserIDSaveInput Number x11 y200 w129 h25, % DiscordUserID
-	
-	Gui, %Gui2_Name%:Add, Picture, gEasterEgg vWBPFP x150 y183 w100 h100, % WBProfilePictureFile
+	Draw_Outline(Gui1_Name, Gui1_Width - 1, 0, Gui2_Width, Gui_Height, GuiTextColor, 2)
 	
 	OnMessage(0x201, "WM_LBUTTONDOWN")
-	Gui, %Gui2_Name%:+AlwaysOnTop +ToolWindow -Caption
-	Gui, %Gui2_Name%:Show, % "NoActivate W" Gui_Width " H" Gui_Height " X" Gui_XPos " Y" Gui_YPos, Webhook Editor Gui
+	Gui, %Gui1_Name%:+AlwaysOnTop +ToolWindow -Caption
+	Gui, %Gui1_Name%:Show, % "NoActivate W" Gui_Width " H" Gui_Height " X" Gui_XPos " Y" Gui_YPos, About Settings/Webhooks Gui
 	GuiControl, Focus, DummyText
 }
 
@@ -379,6 +434,33 @@ LoadVariables(ByRef SettingDefaults, ByRef IniFile, ByRef IniFileSection) {
 		t_Value := v_Name . "SaveInput"
 		
 		%t_Value% := v_Value
+	}
+	
+	if Instr(ClippingKey, " + ") then
+	{
+		ClippingKeys := StrSplit(ClippingKey, " + ")
+		ClippingKeyText := ""
+		for order, key in ClippingKeys
+		{
+			if (order == ClippingKeys.MaxIndex()) then
+			{
+				ClippingKeyText .= key
+			}
+			else
+			{
+				ClippingKeyText .= key " + "
+			}		
+		}
+	}
+	else
+	{
+		ClippingKeyText := "None"
+		IniRead, ClippingKey, % IniFile, % IniFileSection, ClippingKey
+		if (ClippingKey != "None") then
+		{
+			ClippingKey := "None"
+			IniWrite, % ClippingKey, % IniFile, % IniFileSection, ClippingKey
+		}
 	}
 }
 
