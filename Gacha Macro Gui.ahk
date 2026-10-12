@@ -300,7 +300,14 @@ else
 
 if (EasterEggClicks >= 2) then
 {
-	CreateGui2()
+	if !WinExist("Easter Egg Gui") then
+	{
+		CreateGui2()
+	}
+	else
+	{
+		Gui, 2:Hide
+	}
 	/*
 	Gui, 1:Hide
 	Msgbox, Little Easter Egg
