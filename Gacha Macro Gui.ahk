@@ -271,6 +271,36 @@ if (A_GuiControl == "Disconnect Detection Details") then
 {
 	Msgbox % AboutDisconnectDetectionText
 }
+else
+if (A_GuiControl == "Webhook URL Details") then
+{
+	Msgbox % AboutWebhookURLText
+}
+else
+if (A_GuiControl == "Screenshot Webhook URL Details") then
+{
+	Msgbox % AboutScreenshotWebhookURLText
+}
+else
+if (A_GuiControl == "Webhook Name Details") then
+{
+	Msgbox % AboutWebhookNameText
+}
+else
+if (A_GuiControl == "Webhook PFP Details") then
+{
+	Msgbox % AboutWebhookPFPText
+}
+else
+if (A_GuiControl == "Discord User ID Details") then
+{
+	Msgbox % AboutDiscordUserIDText
+}
+else
+if (A_GuiControl == "Webhook Tester Details") then
+{
+	Msgbox % AboutWebhookTesterText
+}
 
 sleep, 200
 Gui, %Gui1_Name%:Show, % "NoActivate W" Gui_Width " H" Gui1_Height + Gui2_Height " X" Gui_X " Y" Gui_Y, Main Gui
@@ -518,7 +548,7 @@ CreateGui() {
 	
 	AboutSleepTimerText := "Sleep Timer:`nIf this isn't 0 and the macro is on, it will menu you and stop"
 	AboutSleepTimerText .= " once the time since you started the macro and current time are the number you put."
-	AboutSleepTimerText .= " Please note that his is in minutes."
+	AboutSleepTimerText .= " Please note that this is in minutes."
 	AboutInputBlockText := "Input Block:`nIf this is on then while the macro is NOT waiting in ff doing nothing"
 	AboutInputBlockText .= ", it will block inputs to stop you from intefering with the macro."
 	AboutInputBlockText .= " Please note that if this is on then it will ask for you to run as admin."
