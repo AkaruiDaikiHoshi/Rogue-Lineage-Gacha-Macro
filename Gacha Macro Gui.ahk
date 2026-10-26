@@ -71,6 +71,11 @@ global SettingDefaults, IniFile, IniFileSection
 global WebhookName, WebhookNameSaveInput
 global WBProfilePictureFileSaveInput, WBProfilePictureFile
 
+while (A_TimeIdlePhysical < 250)
+{
+	sleep, 25
+}
+
 Gui, Submit, NoHide
 
 if (WebhookName && !WebhookNameSaveInput) then
@@ -414,6 +419,8 @@ CreateGui() {
 	Draw_Line(Gui1_Name, Gui1_Width // 2, 35, 2, Gui1_Height - 35, GuiTextColor)
 	Gui, %Gui1_Name%:Font, c%GuiTextColor% s10 norm, %GuiFont%
 	
+	; TEXTS/PICTURES ----------------------------
+	
 	if (WBProfilePictureFile != "" && FileExist(WBProfilePictureFile)) then
 	{
 		Gui, %Gui1_Name%:Add, Picture, gEasterEgg vWBPFP x650 y183 w100 h100, % WBProfilePictureFile
@@ -440,8 +447,10 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Text, gGithubLink x765 y260, Might Be On Github
 	
 	Gui, %Gui1_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
+	; INPUT SAVES -------------------------------
 	
 	;Gui, %Gui1_Name%:Add, Button, gOpenGui x115 y45 h25, Webhook Editor
+	;Gui, %Gui1_Name%:Add, Hotkey, gUpdateSettings vClippingKeySaveInput x115 y45 w111 h25, % ClippingKey
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vClippingKeySaveInput x115 y45 w111 h25, % ClippingKeyText
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vChairSlotSaveInput Number x186 y75 w40 h25, % ChairSlot
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldWaitTimeSaveInput Number x186 y105 w40 h25, % ForceFieldWaitTime
@@ -528,6 +537,8 @@ CreateGui() {
 	
 	AboutClippingText := "Clipping:`nInputted when you: get ff pushed, roll a good scroll, or when unusual activity is detected at gacha room."
 	AboutClippingText .= " Make sure to have clipping on and have the correct clipping keys set."
+	AboutClippingText .= " Make sure to have the format like this if it has multiple keys: "
+	AboutClippingText .= "Alt + F10, Control + Shift + F1"
 	AboutChairSlotText := "Chair Slot:`nThis will be the key inputted to equip and unequip chair."
 	AboutChairSlotText .= " If you do not have a chair then leave this blank."
 	AboutForceFieldWaitTimeText := "Force Field Wait Time:`nThis will be (in seconds) how long you stay in ff for day farming."
@@ -535,11 +546,11 @@ CreateGui() {
 	AboutForceFieldCutoffText .= " to make sure you have force field."
 	AboutForceFieldCheckDurationText := "Force Field Check Duration:`nThis will be (in seconds) how long it checks for force field."
 	AboutForceFieldCheckDurationText .= " Please take note that if the macro doesn't have enough correct checks for force field"
-	AboutForceFieldCheckDurationText .= ", it will menu."
+	AboutForceFieldCheckDurationText .= ", it will menu. This will also be used for detecting gacha guy."
 	AboutPixelOffsetText := "Pixel Offset:`nThis will be the ""MouseMove"" offset when trying to click on gacha."
 	AboutPixelOffsetText .= " This is because the cursor may not be able to click on gacha, so this moves it around a bit"
 	AboutPixelOffsetText .= " in each direction."
-	AboutScreenshotIntervalText := "Screenshot Interval:`nThis is delay between each screenshot taken."
+	AboutScreenshotIntervalText := "Screenshot Interval:`nThis is delay (in minutes) between each screenshot taken."
 	AboutScreenshotIntervalText .= " Please note that this may be 1-3 minutes off."
 	AboutSilverCutOffText := "Silver Cutoff:`nWhen your silver reaches this EXACT amount and detetcts it"
 	AboutSilverCutOffText .= ", you will be menu'd and macro will be stopped."
@@ -547,12 +558,13 @@ CreateGui() {
 	; About Settings Part 2
 	
 	AboutSleepTimerText := "Sleep Timer:`nIf this isn't 0 and the macro is on, it will menu you and stop"
-	AboutSleepTimerText .= " once the time since you started the macro and current time are the number you put."
+	AboutSleepTimerText .= " once the current time - when you started the macro is greater than the number you put."
 	AboutSleepTimerText .= " Please note that this is in minutes."
 	AboutInputBlockText := "Input Block:`nIf this is on then while the macro is NOT waiting in ff doing nothing"
 	AboutInputBlockText .= ", it will block inputs to stop you from intefering with the macro."
 	AboutInputBlockText .= " Please note that if this is on then it will ask for you to run as admin."
 	AboutTimeGainedToolTipText := "Time Gained ToolTip:`nIf on then the tooltip showing time gained will be shown on screen."
+	AboutTimeGainedToolTipText .= " This will also be used for the waiting tooltip."
 	AboutServerHopText := "Server Hop:`nServer hops you if unusual activity is detected at gacha room"
 	AboutServerHopText .= ", when you are ff pushed, or if server gets too big."
 	AboutForceFieldWaitDetectionText := "Force Field Wait Detection:`nIf this is turned on the macro will"
@@ -654,7 +666,6 @@ LoadVariables(ByRef SettingDefaults, ByRef IniFile, ByRef IniFileSection) {
 	
 	for v_Name, v_Value in SettingDefaults
 	{
-		
 		%v_Name% := v_Value
 		IniRead, t_Value, % IniFile, % IniFileSection, % v_Name
 		
