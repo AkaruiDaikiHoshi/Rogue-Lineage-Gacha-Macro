@@ -11,9 +11,11 @@ It will be buggy at some times due to lag and/or other things.
 Some settings are not that easy to change.
 
 You can add more silver screenshots by:
-|| putting the amount of silver and then "silver" with no spaces
-|| like: 0silver, 250silver
-|| make sure it's somewhat similar to the screenshots I have already 
+
+    putting the amount of silver and then "silver" with no spaces
+    like: 0silver, 250silver
+    make sure it's somewhat similar to the screenshots I have already 
+    
 The added screenshots will be added onto the gui dropdownlist
 
 You can add more scroll screenshots by:
