@@ -49,9 +49,9 @@ IniRead, SnarvCutoff, % IniFile, % IniFileSection, SnarvCutoff
 IniRead, HoppaCutoff, % IniFile, % IniFileSection, HoppaCutoff
 IniRead, PercCutoff, % IniFile, % IniFileSection, PercCutoff
 
-;IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
-;IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
-; both removed
+IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
+IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
+IniRead, ScrollAutoPop, % IniFile, % IniFileSection, ScrollAutoPop
 
 global InputBlock := InputBlock == "On"
 global TimeGainedToolTip := TimeGainedToolTip == "On"
@@ -62,6 +62,7 @@ global HasHoppaCutoff := HoppaCutoff == "On"
 global HasPercCutoff := PercCutoff == "On"
 
 global DisconnectDetection := DisconnectDetection == "On" ; idk
+global ScrollAutoPop := ScrollAutoPop == "On"
 
 if (!A_IsAdmin && InputBlock) then
 {
@@ -404,6 +405,23 @@ for SLindex, SLFilePath in ScrollScreenshots
 				if InStr(ScrollName, "perc") then
 					MacroForceStop := true
 			}
+			
+			if (ScrollAutoPop) then
+			{
+				MouseMove, SLx, SLy
+				sleep, 250 ; delay
+				SendInput, {click}
+				sleep, 250 ; delay
+				SendInput, `` ; inv is already opened so this closes it
+				sleep, 250 ; delay
+				MouseMove, % PixelOffsetCords[1], % PixelOffsetCords[2] ; moves to a clickable place
+				sleep, 250 ; delay
+				SendInput, {click} ; pops scroll
+				sleep, 250 ; delay
+				SendInput, `` ; inv is already closed so this opens it
+				sleep, 250
+				SendInput, % ChairSlot ChairSlot ; equips and unequips chair so you have nothing equipped
+			}
 		}
 	}
 	else
@@ -580,6 +598,7 @@ ResetVariables() {
 	GachaGuyCount := 0
 	GachaGuySpinStop := false
 	Temp_ForceFieldWaitCount := 0
+	PixelOffsetCords := []
 }
 
 
