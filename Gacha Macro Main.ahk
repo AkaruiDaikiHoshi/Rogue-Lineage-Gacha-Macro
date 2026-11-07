@@ -49,8 +49,9 @@ IniRead, SnarvCutoff, % IniFile, % IniFileSection, SnarvCutoff
 IniRead, HoppaCutoff, % IniFile, % IniFileSection, HoppaCutoff
 IniRead, PercCutoff, % IniFile, % IniFileSection, PercCutoff
 
-IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
-IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
+;IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
+;IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
+; both removed
 
 global InputBlock := InputBlock == "On"
 global TimeGainedToolTip := TimeGainedToolTip == "On"
