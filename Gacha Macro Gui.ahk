@@ -44,7 +44,8 @@ global SettingDefaults := {"WebhookURL": ""
 	, "PercCutoff": "Off"}
 	
 global SettingEasterEggs := {"ErrorIgnore": false
-	, "DisconnectDetection": "Off"}
+	, "DisconnectDetection": "Off"
+	, "ScrollAutoPop": "Off"}
 
 LoadVariables(SettingDefaults, IniFile, IniFileSection)
 
@@ -346,7 +347,6 @@ EasterEgg:
 global EasterEggClicks, EasterEggClicksTime
 Gui, Submit, NoHide
 
-return
 if (EasterEggClicksTime && (A_TickCount - EasterEggClicksTime) >= 1000) then
 {
 	EasterEggClicksTime := 0
@@ -520,7 +520,7 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vHoppaCutoffSaveInput Checked%CheckBoxHoppaCutoff% c%GuiTextColor% x430 y215, Hoppa
 	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vPercCutoffSaveInput Checked%CheckBoxPercCutoff% c%GuiTextColor% x430 y235, Perc
 		
-	Gui, %Gui1_Name%:Add, Button, gExpandGui x370 y255 w110 h25, About Settings
+	Gui, %Gui1_Name%:Add, Button, gExpandGui x370 y255 w110 h25, Settings Info
 	
 	; GUI 2 -------------------------------------
 	
@@ -584,6 +584,7 @@ CreateGui() {
 	
 	AboutSleepTimerText := "Sleep Timer:`nIf this isn't 0 and the macro is on, it will menu you and stop"
 	AboutSleepTimerText .= " once the current time - when you started the macro is greater than the number you put."
+	AboutSleepTimerText .= " Example: Sleep Timer is set to 60, and 60 minutes after you start the macro it menus and stops."
 	AboutSleepTimerText .= " Please note that this is in minutes."
 	AboutInputBlockText := "Input Block:`nIf this is on then while the macro is NOT waiting in ff doing nothing"
 	AboutInputBlockText .= ", it will block inputs to stop you from intefering with the macro."
@@ -682,6 +683,13 @@ CreateGui2() {
 	
 	Gui, Add, Text, vDummyText x-1000 y-1000 w0 h0, Dummy Text
 	
+	Gui, %Gui2_Name%:Add, Text, x10 y10, Scroll Auto Pop
+	
+	if (ScrollAutoPop == "On") then
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x100 y7 w40, % "Off|On||"
+	else
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x110 y8 w40, % "Off||On"
+	/*
 	Gui, %Gui2_Name%:Add, Text, x10 y10, Error Ignore
 	Gui, %Gui2_Name%:Add, Text, x10 y40, Disconnect Detection
 	
@@ -691,6 +699,7 @@ CreateGui2() {
 		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vDisconnectDetectionSaveInput x145 y36 w40, % "Off|On||"
 	else
 		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vDisconnectDetectionSaveInput x145 y36 w40, % "Off||On"
+	*/
 	
 	Gui, %Gui2_Name%:+AlwaysOnTop +ToolWindow -Caption
 	Gui, %Gui2_Name%:Show, % "NoActivate W" Gui_Width2 " H" Gui_Height2 " X" Gui_XPos2 " Y" Gui_YPos2, Easter Egg Gui
