@@ -8,7 +8,7 @@ It will be buggy at some times due to lag and/or other things.
 
 ----------------------------------------------------------------------------------
 
-Some settings are not that easy to change.
+Some settings are not easy to change.
 
 You can add more silver screenshots by:
 
