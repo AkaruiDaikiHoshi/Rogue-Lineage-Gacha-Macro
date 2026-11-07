@@ -1,12 +1,24 @@
 #SingleInstance Force
 SetWorkingDir %A_ScriptDir%
-;Process Priority,, High
 
 global IniFile := A_ScriptDir . "\Menu Gacha Macro Settings.ini"
 global IniFileSection := "Stored Variables"
 if !FileExist(IniFile) then
 {
 	FileAppend, , % IniFile
+}
+
+global MacroFolders := ["DisconnectScreenshots"
+	, "DiscordWebhook"
+	, "Screenshots"
+	, "ScrollScreenshots"
+	, "SilverScreenshots"]
+	
+for FolderIndex, FolderName in MacroFolders
+{
+	%FolderName%Path := A_ScriptDir . "\" . FolderName
+	if !FileExist(%FolderName%Path)
+		FileCreateDir, % %FolderName%Path
 }
 
 global SettingDefaults := {"WebhookURL": ""
@@ -21,15 +33,18 @@ global SettingDefaults := {"WebhookURL": ""
 	, "SleepTimer": 0
 	, "InputBlock": "On"
 	, "TimeGainedToolTip": "On"
-	, "ServerHop": "Off"
+	, "ForceFieldWaitCheckDetection": "0.5"
 	, "ForceFieldWaitDetection": "Off"
-	, "DisconnectDetection": "Off"
 	, "WebhookName": "Gacha Macro Webhook"
 	, "WBProfilePictureFile": ""
-	, "DiscordUserID": 0
-	, "ClippingKey": "None"}
+	, "DiscordUserID": "everyone"
+	, "GachaGuyDetectionOffset": "100"
+	, "SnarvCutoff": "Off"
+	, "HoppaCutoff": "Off"
+	, "PercCutoff": "Off"}
 	
-global SettingEasterEggs := {"ErrorIgnore": false}
+global SettingEasterEggs := {"ErrorIgnore": false
+	, "DisconnectDetection": "Off"}
 
 LoadVariables(SettingDefaults, IniFile, IniFileSection)
 
@@ -71,9 +86,13 @@ global SettingDefaults, IniFile, IniFileSection
 global WebhookName, WebhookNameSaveInput
 global WBProfilePictureFileSaveInput, WBProfilePictureFile
 
-while (A_TimeIdlePhysical < 250)
+loop, 10
 {
-	sleep, 25
+	sleep, 100
+	if (A_TimeIdle > 250) then
+	{
+		break
+	}
 }
 
 Gui, Submit, NoHide
@@ -88,11 +107,14 @@ if (WBProfilePictureFile && !WBProfilePictureFileSaveInput) then
 	WBProfilePictureFileSaveInput := WBProfilePictureFile
 }
 
+SnarvCutoffSaveInput := (SnarvCutoffSaveInput ? "On" : "Off")
+HoppaCutoffSaveInput := (HoppaCutoffSaveInput ? "On" : "Off")
+PercCutoffSaveInput := (PercCutoffSaveInput ? "On" : "Off")
+
 for v_Name, v_Value in SettingDefaults
 {
 	InpVarName := v_Name . "SaveInput"
 	IniWrite, % %InpVarName%, % IniFile, % IniFileSection, % v_Name
-	Gui, Submit, NoHide
 	IniRead, t_Value, % IniFile, % IniFileSection, % v_Name
 	if (t_Value != %InpVarName%) then
 	{
@@ -207,9 +229,9 @@ WinGetPos, Gui_X, Gui_Y, , , Main Gui
 Gui, 1:Hide
 sleep, 50
 
-if (A_GuiControl == "Clipping Details") then
+if (A_GuiControl == "Gacha Guy Detection Offset Details") then
 {
-	Msgbox % AboutClippingText
+	Msgbox % AboutGachaGuyDetectionOffsetText
 }
 else
 if (A_GuiControl == "Chair Slot Details") then
@@ -262,19 +284,14 @@ if (A_GuiControl == "Time Gained ToolTip Details") then
 	Msgbox % AboutTimeGainedToolTipText
 }
 else
-if (A_GuiControl == "Server Hop Details") then
+if (A_GuiControl == "Force Field WaitC Detection Details") then
 {
-	Msgbox % AboutServerHopText
+	Msgbox % AboutForceFieldWaitCheckDetectionText
 }
 else
 if (A_GuiControl == "Force Field Wait Detection Details") then
 {
 	Msgbox % AboutForceFieldWaitDetectionText
-}
-else
-if (A_GuiControl == "Disconnect Detection Details") then
-{
-	Msgbox % AboutDisconnectDetectionText
 }
 else
 if (A_GuiControl == "Webhook URL Details") then
@@ -306,6 +323,19 @@ if (A_GuiControl == "Webhook Tester Details") then
 {
 	Msgbox % AboutWebhookTesterText
 }
+else
+if (A_GuiControl == "Spell Cutoff Details") then
+{
+	Msgbox % AboutSpellCutoffText
+}
+else
+if (A_GuiControl == "Spell Cutoff") then
+{
+	Msgbox, 15 wanted to name this along the lines of "femboy spell"
+	sleep, 200
+	Gui, %Gui1_Name%:Show, % "NoActivate W" Gui_Width " H" Gui_Height " X" Gui_XPos " Y" Gui_YPos, Main Gui
+	return
+}
 
 sleep, 200
 Gui, %Gui1_Name%:Show, % "NoActivate W" Gui_Width " H" Gui1_Height + Gui2_Height " X" Gui_X " Y" Gui_Y, Main Gui
@@ -315,8 +345,8 @@ return
 EasterEgg:
 global EasterEggClicks, EasterEggClicksTime
 Gui, Submit, NoHide
-WinGetPos, Gui_X, Gui_Y, , , Main Gui
 
+return
 if (EasterEggClicksTime && (A_TickCount - EasterEggClicksTime) >= 1000) then
 {
 	EasterEggClicksTime := 0
@@ -343,18 +373,6 @@ if (EasterEggClicks >= 2) then
 	{
 		Gui, 2:Hide
 	}
-	/*
-	Gui, 1:Hide
-	Msgbox, Little Easter Egg
-	if !(Gui_Expanded) then
-	{
-		Gui, %Gui1_Name%:Show, % "NoActivate W" Gui_Width " H" Gui_Height " X" Gui_X " Y" Gui_Y, Main Gui
-	}
-	else
-	{
-		Gui, %Gui1_Name%:Show, % "NoActivate W" Gui_Width " H" Gui1_Height + Gui2_Height " X" Gui_X " Y" Gui_Y, Main Gui
-	}
-	*/
 }
 return
 
@@ -379,9 +397,13 @@ LoadVariables(SettingDefaults, IniFile, IniFileSection)
 return
 
 
-GithubLink:
+LinkOpen:
 Gui, Submit, NoHide
-Run, https://github.com/AkaruiDaikiHoshi
+if (A_GuiControl == "Made By Akarui") then
+	Run, https://discord.com/users/1148540223681220628
+else
+if (A_GuiControl == "Might Be On GitHub") then
+	Run, https://github.com/AkaruiDaikiHoshi
 return
 
 
@@ -401,6 +423,7 @@ CreateGui() {
 	Gui_Expanded := false
 	GuiMainColor := "111111"
 	GuiTextColor := "E4F0F6"
+	GuiLinkColor := "5694EA"
 	GuiFont := "MS Sans Serif"
 	
 	; GUI 1 -------------------------------------
@@ -427,8 +450,7 @@ CreateGui() {
 	}
 	;Gui, %Gui1_Name%:Add, Picture, x725 y390 w150 h150, % "E:\T7\AutoHotKey Scripts\AutoHotKey Scripts\Macro Creation\Real Rogue\Utilities\Auto Gacha Menu\ScrollScreenshots\hoppascroll.png"
 	
-	;Gui, %Gui1_Name%:Add, Text, x10 y50, Webhook URL
-	Gui, %Gui1_Name%:Add, Text, x10 y50, Clipping
+	Gui, %Gui1_Name%:Add, Text, x10 y50, Gacha Guy Detection Offset
 	Gui, %Gui1_Name%:Add, Text, x10 y80, Chair Slot
 	Gui, %Gui1_Name%:Add, Text, x10 y110, Force Field Wait Time
 	Gui, %Gui1_Name%:Add, Text, x10 y140, Force Field Cutoff
@@ -439,19 +461,18 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Text, x260 y50, Sleep Timer
 	Gui, %Gui1_Name%:Add, Text, x260 y80, Input Block
 	Gui, %Gui1_Name%:Add, Text, x260 y110, Time Gained ToolTip
-	Gui, %Gui1_Name%:Add, Text, x260 y140, Server Hop
-	Gui, %Gui1_Name%:Add, Text, x260 y170, Force Field Wait Detection
-	Gui, %Gui1_Name%:Add, Text, x260 y200, Disconnect Detection
+	Gui, %Gui1_Name%:Add, Text, x260 y140, Force Field Wait Detection
+	Gui, %Gui1_Name%:Add, Text, x260 y170, Force Field WaitC Detection
+	Gui, %Gui1_Name%:Add, Text, x260 y200, Spell Cutoff
 	
-	Gui, %Gui1_Name%:Add, Text, x260 y260, Made By Akarui
-	Gui, %Gui1_Name%:Add, Text, gGithubLink x765 y260, Might Be On Github
+	Gui, %Gui1_Name%:Font, c%GuiLinkColor% s10 underline, %GuiFont%
+	Gui, %Gui1_Name%:Add, Text, gLinkOpen x260 y260, Made By Akarui
+	Gui, %Gui1_Name%:Add, Text, gLinkOpen x765 y260, Might Be On GitHub
 	
 	Gui, %Gui1_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
 	; INPUT SAVES -------------------------------
 	
-	;Gui, %Gui1_Name%:Add, Button, gOpenGui x115 y45 h25, Webhook Editor
-	;Gui, %Gui1_Name%:Add, Hotkey, gUpdateSettings vClippingKeySaveInput x115 y45 w111 h25, % ClippingKey
-	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vClippingKeySaveInput x115 y45 w111 h25, % ClippingKeyText
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vGachaGuyDetectionOffsetSaveInput Number x186 y45 w40 h25, % GachaGuyDetectionOffset
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vChairSlotSaveInput Number x186 y75 w40 h25, % ChairSlot
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldWaitTimeSaveInput Number x186 y105 w40 h25, % ForceFieldWaitTime
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldCutoffSaveInput Number x186 y135 w40 h25, % ForceFieldCutoff
@@ -460,8 +481,15 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vScreenshotIntervalSaveInput Number x186 y225 w40 h25, % ScreenshotInterval
 	
 	SilverCoListText := SilverCutoff . "|"
-	for index, value in SilverCoList
-		SilverCoListText .= "|" . value
+	if (SilverCoList.MaxIndex() >= 1) then
+	{
+		for index, value in SilverCoList
+			SilverCoListText .= "|" . value
+	}
+	else
+	{
+		SilverCoListText .= "|"
+	}
 		
 	Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vSilverCutoffSaveInput x115 y255 w111, % SilverCoListText
 	
@@ -476,21 +504,21 @@ CreateGui() {
 		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vTimeGainedToolTipSaveInput x436 y105 w40, % "Off|On||"
 	else
 		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vTimeGainedToolTipSaveInput x436 y105 w40, % "Off||On"
-		
-	if (ServerHop == "On") then
-		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vServerHopSaveInput x436 y135 w40, % "Off|On||"
-	else
-		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vServerHopSaveInput x436 y135 w40, % "Off||On"
-		
-	if (ForceFieldWaitDetection == "On") then
-		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vForceFieldWaitDetectionSaveInput x436 y165 w40, % "Off|On||"
-	else
-		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vForceFieldWaitDetectionSaveInput x436 y165 w40, % "Off||On"
 	
-	if (DisconnectDetection == "On") then
-		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vDisconnectDetectionSaveInput x436 y195 w40, % "Off|On||"
+	if (ForceFieldWaitDetection == "On") then
+		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vForceFieldWaitDetectionSaveInput x436 y135 w40, % "Off|On||"
 	else
-		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vDisconnectDetectionSaveInput x436 y195 w40, % "Off||On"
+		Gui, %Gui1_Name%:Add, DropDownList, gUpdateSettings vForceFieldWaitDetectionSaveInput x436 y135 w40, % "Off||On"
+		
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldWaitCheckDetectionSaveInput Number x436 y165 w40, % ForceFieldWaitCheckDetection
+	
+	CheckBoxSnarvCutoff := SnarvCutoff == "On"
+	CheckBoxHoppaCutoff := HoppaCutoff == "On"
+	CheckBoxPercCutoff := PercCutoff == "On"
+	
+	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vSnarvCutoffSaveInput Checked%CheckBoxSnarvCutoff% c%GuiTextColor% x430 y195, Snarv
+	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vHoppaCutoffSaveInput Checked%CheckBoxHoppaCutoff% c%GuiTextColor% x430 y215, Hoppa
+	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vPercCutoffSaveInput Checked%CheckBoxPercCutoff% c%GuiTextColor% x430 y235, Perc
 		
 	Gui, %Gui1_Name%:Add, Button, gExpandGui x370 y255 w110 h25, About Settings
 	
@@ -519,14 +547,7 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vWebhookURLSaveInput x610 y13 w270 h25, % WebhookURL
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vScreenshotWebhookURLSaveInput x685 y43 w195 h25, % ScreenshotWebhookURL
 	Gui, %Gui1_Name%:Add, Edit, vWebhookNameSaveInput x555 y113 w150 h25, % WebhookName
-	if (DiscordUserID == "everyone") then
-	{
-		Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vDiscordUserIDSaveInput Number x520 y200 w120 h25, 
-	}
-	else
-	{
-		Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vDiscordUserIDSaveInput Number x520 y200 w120 h25, % DiscordUserID
-	}
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vDiscordUserIDSaveInput Number x520 y200 w120 h25, % DiscordUserID
 	
 	; GUI 1.5 -------------------------------------
 	
@@ -539,6 +560,10 @@ CreateGui() {
 	AboutClippingText .= " Make sure to have clipping on and have the correct clipping keys set."
 	AboutClippingText .= " Make sure to have the format like this if it has multiple keys: "
 	AboutClippingText .= "Alt + F10, Control + Shift + F1"
+	AboutGachaGuyDetectionOffsetText := "Gacha Guy Detection Offset:`nThis will be the pixel offset"
+	AboutGachaGuyDetectionOffsetText .= " when trying to detect the gacha guy."
+	AboutGachaGuyDetectionOffsetText .= " Having this prevents it from detecting around the borders"
+	AboutGachaGuyDetectionOffsetText .= " of your roblox window"
 	AboutChairSlotText := "Chair Slot:`nThis will be the key inputted to equip and unequip chair."
 	AboutChairSlotText .= " If you do not have a chair then leave this blank."
 	AboutForceFieldWaitTimeText := "Force Field Wait Time:`nThis will be (in seconds) how long you stay in ff for day farming."
@@ -569,11 +594,16 @@ CreateGui() {
 	AboutServerHopText .= ", when you are ff pushed, or if server gets too big."
 	AboutForceFieldWaitDetectionText := "Force Field Wait Detection:`nIf this is turned on the macro will"
 	AboutForceFieldWaitDetectionText .= " check for force field while waiting for days."
+	AboutForceFieldWaitCheckDetectionText := "Force Field Wait Check Detection:`nThis is the how long (in seconds) that the macro will check"
+	AboutForceFieldWaitCheckDetectionText .= " for force field while waiting."
+	AboutForceFieldWaitCheckDetectionText .= " Please take note that the lower this is, the faster you menu when out of ff."
 	AboutDisconnectDetectionText := "DisconnectDetection:`nThis will make you rejoin if you are disconnected for whatever reason."
+	AboutSpellCutoffText := "Spell Cutoff:`nThe macro will stop after it has:`n"
+	AboutSpellCutoffText .= "Detected a spell you have checked off and when it menus."
 	
 	; Gui Adds
 	
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y314 h25, Clipping Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y314 h25, Gacha Guy Detection Offset Details
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y349 h25, Chair Slot Details
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y384 h25, Force Field Wait Time Details
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y419 h25, Force Field Cutoff Details
@@ -582,13 +612,12 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y524 h25, Screenshot Interval Details
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x10 y559 h25, Silver Cutoff Details
 	
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y314 h25, Sleep Timer Details
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y349 h25, Input Block Details
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y384 h25, Time Gained ToolTip Details
-	;Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y419 h25, Force Field Cutoff Details
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y419 h25, Server Hop Details ; 454
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y454 h25, Force Field Wait Detection Details ; 489
-	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x280 y489 h25, Disconnect Detection Details ; 524
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y314 h25, Sleep Timer Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y349 h25, Input Block Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y384 h25, Time Gained ToolTip Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y419 h25, Force Field Wait Detection Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y454 h25, Force Field WaitC Detection Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y489 h25, Spell Cutoff Details
 	
 	Gui, %Gui1_Name%:Add, Text, x270 y550 w220 +Wrap, Theres something you can click on for a little easter egg...
 	
@@ -633,11 +662,13 @@ CreateGui2() {
 	global
 	static TitleText, DummyText
 	
+	WinGetPos, Gui_X, Gui_Y, Gui_W, Gui_H, Main Gui
+	
 	Gui2_Name := 2
 	Gui_Width2 := 400
 	Gui_Height2 := 300
-	Gui_XPos2 := (A_ScreenWidth // 2) - (Gui_Width2 // 2)
-	Gui_YPos2 := (A_ScreenHeight // 2) - (Gui_Height2 // 2)
+	Gui_XPos2 := (Gui_X + (Gui_W // 2) - (Gui_Width2 // 2)) ; (A_ScreenWidth // 2) - (Gui_Width2 // 2)
+	Gui_YPos2 := Gui_Y + Gui_H
 	GuiMainColor := "111111"
 	GuiTextColor := "E4F0F6"
 	GuiFont := "MS Sans Serif"
@@ -652,8 +683,14 @@ CreateGui2() {
 	Gui, Add, Text, vDummyText x-1000 y-1000 w0 h0, Dummy Text
 	
 	Gui, %Gui2_Name%:Add, Text, x10 y10, Error Ignore
+	Gui, %Gui2_Name%:Add, Text, x10 y40, Disconnect Detection
+	
 	
 	Gui, %Gui2_Name%:Add, CheckBox, gUpdateEasterEggSettings vErrorIgnoreSaveInput Checked%ErrorIgnore% x90 y11, 
+	if (DisconnectDetection == "On") then
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vDisconnectDetectionSaveInput x145 y36 w40, % "Off|On||"
+	else
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vDisconnectDetectionSaveInput x145 y36 w40, % "Off||On"
 	
 	Gui, %Gui2_Name%:+AlwaysOnTop +ToolWindow -Caption
 	Gui, %Gui2_Name%:Show, % "NoActivate W" Gui_Width2 " H" Gui_Height2 " X" Gui_XPos2 " Y" Gui_YPos2, Easter Egg Gui
@@ -698,33 +735,6 @@ LoadVariables(ByRef SettingDefaults, ByRef IniFile, ByRef IniFileSection) {
 		t_Value := v_Name . "SaveInput"
 		
 		%t_Value% := v_Value
-	}
-	
-	if Instr(ClippingKey, " + ") then
-	{
-		ClippingKeys := StrSplit(ClippingKey, " + ")
-		ClippingKeyText := ""
-		for order, key in ClippingKeys
-		{
-			if (order == ClippingKeys.MaxIndex()) then
-			{
-				ClippingKeyText .= key
-			}
-			else
-			{
-				ClippingKeyText .= key " + "
-			}		
-		}
-	}
-	else
-	{
-		ClippingKeyText := "None"
-		IniRead, ClippingKey, % IniFile, % IniFileSection, ClippingKey
-		if (ClippingKey != "None") then
-		{
-			ClippingKey := "None"
-			IniWrite, % ClippingKey, % IniFile, % IniFileSection, ClippingKey
-		}
 	}
 }
 
@@ -823,7 +833,8 @@ Draw_Line(Gui_Name,x,y,w,h,color){
 
 
 WM_LBUTTONDOWN(wParam, lParam, msg, hwnd) {
-		PostMessage, 0xA1, 2,,, A
+		if (A_GuiControl == "") then
+			PostMessage, 0xA1, 2,,, A
 }
 
 
