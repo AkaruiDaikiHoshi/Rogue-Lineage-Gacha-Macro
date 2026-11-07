@@ -1,4 +1,4 @@
-# Rogue-Lineage-Gacha-Macro
+<h1 align="center">Rogue-Lineage-Gacha-Macro</h1>
 
 ### A macro for Rogue Lineage's gacha system that's for either public servers or 23's (Uses FF).
 
