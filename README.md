@@ -5,6 +5,8 @@
 Not meant to be read if you somehow find this.
 I'm also not sure if all the features work according to how they should.
 It will be buggy at some times due to lag and/or other things.
+I have also removed the function of some features.
+They are still in the code though.
 
 ----------------------------------------------------------------------------------
 
