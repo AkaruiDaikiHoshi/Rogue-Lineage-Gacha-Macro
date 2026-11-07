@@ -601,33 +601,36 @@ UiNavigation(Direction := "") {
 SendWebhook(Message := "", Ping := false, ImagePath := "") {
 	global
 	
-	if (Ping) then
-		Message .= "`n<@" DiscordUserID ">"
-		
-	if Instr(Message, "NO") then
+	if (WebhookURL != "") then
 	{
-		ToolTip, , , , 1
-		ToolTip, , , , 2
+		if (Ping) then
+			Message .= "`n<@" DiscordUserID ">"
+			
+		if Instr(Message, "NO") then
+		{
+			ToolTip, , , , 1
+			ToolTip, , , , 2
+		}
+		
+		TempLogFile := A_ScriptDir . "\DiscordWebhook\DiscordWebhookLog.txt"
+		TempMessageSendFile := A_ScriptDir . "\DiscordWebhook\DiscordWebhookMessage.txt"
+		FileDelete, %TempMessageSendFile%
+		FileAppend, %Message%, %TempMessageSendFile%
+		
+		Webhook := WebhookURL
+		if (ImagePath != "" && ScreenshotWebhookURL != "") then
+			Webhook := ScreenshotWebhookURL
+		
+		Command := "curl -s -X POST """ Webhook """"
+		Command .= " -F ""content=<" TempMessageSendFile """"
+		if (ImagePath != "") then
+			Command .= " -F ""files[0]=@" ImagePath """"
+		Command .= " -o """ TempLogFile """"
+		
+		RunWait, % ComSpec " /C " Command,, Hide
+		FileRead, Response, %TempLogFile%
+		return Response
 	}
-	
-	TempLogFile := A_ScriptDir . "\DiscordWebhook\DiscordWebhookLog.txt"
-	TempMessageSendFile := A_ScriptDir . "\DiscordWebhook\DiscordWebhookMessage.txt"
-	FileDelete, %TempMessageSendFile%
-	FileAppend, %Message%, %TempMessageSendFile%
-	
-	Webhook := WebhookURL
-	if (ImagePath != "") then
-		Webhook := ScreenshotWebhookURL
-	
-	Command := "curl -s -X POST """ Webhook """"
-	Command .= " -F ""content=<" TempMessageSendFile """"
-	if (ImagePath != "") then
-		Command .= " -F ""files[0]=@" ImagePath """"
-	Command .= " -o """ TempLogFile """"
-	
-	RunWait, % ComSpec " /C " Command,, Hide
-	FileRead, Response, %TempLogFile%
-	return Response
 }
 
 
