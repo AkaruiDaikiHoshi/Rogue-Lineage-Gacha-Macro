@@ -29,7 +29,7 @@ if !FileExist(IniFile) then
 	ExitApp
 }
 
-IniRead, ClippingKey, % IniFile, % IniFileSection, ClippingKey
+IniRead, GachaGuyDetectionOffset, % IniFile, % IniFileSection, GachaGuyDetectionOffset
 IniRead, ChairSlot, % IniFile, % IniFileSection, ChairSlot
 IniRead, ForceFieldWaitTime, % IniFile, % IniFileSection, ForceFieldWaitTime
 IniRead, ForceFieldCutoff, % IniFile, % IniFileSection, ForceFieldCutoff
@@ -40,35 +40,58 @@ IniRead, SilverCutoff, % IniFile, % IniFileSection, SilverCutoff
 IniRead, SleepTimer, % IniFile, % IniFileSection, SleepTimer
 IniRead, InputBlock, % IniFile, % IniFileSection, InputBlock
 IniRead, TimeGainedToolTip, % IniFile, % IniFileSection, TimeGainedToolTip
-IniRead, ServerHop, % IniFile, % IniFileSection, ServerHop
+IniRead, ForceFieldWaitCheckDetection, % IniFile, % IniFileSection, ForceFieldWaitCheckDetection
 IniRead, ForceFieldWaitDetection, % IniFile, % IniFileSection, ForceFieldWaitDetection
-IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
 IniRead, WebhookURL, % IniFile, % IniFileSection, WebhookURL
 IniRead, ScreenshotWebhookURL, % IniFile, % IniFileSection, ScreenshotWebhookURL
 IniRead, DiscordUserID, % IniFile, % IniFileSection, DiscordUserID
+IniRead, SnarvCutoff, % IniFile, % IniFileSection, SnarvCutoff
+IniRead, HoppaCutoff, % IniFile, % IniFileSection, HoppaCutoff
+IniRead, PercCutoff, % IniFile, % IniFileSection, PercCutoff
 
 IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
+IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
 
-InputBlock := InputBlock == "On"
-TimeGainedToolTip := TimeGainedToolTip == "On"
-ServerHop := ServerHop == "On"
-ForceFieldWaitDetection := ForceFieldWaitDetection == "On"
-DisconnectDetection := DisconnectDetection == "On"
-HasSilverCutoff := SilverCutoff != "None"
+global InputBlock := InputBlock == "On"
+global TimeGainedToolTip := TimeGainedToolTip == "On"
+global ForceFieldWaitDetection := ForceFieldWaitDetection == "On"
+global HasSilverCutoff := SilverCutoff != "None"
+global HasSnarvCutoff := SnarvCutoff == "On"
+global HasHoppaCutoff := HoppaCutoff == "On"
+global HasPercCutoff := PercCutoff == "On"
 
-if (!A_IsAdmin && InputBlock or !A_IsAdmin && ClippingKey) then
+global DisconnectDetection := DisconnectDetection == "On" ; idk
+
+if (!A_IsAdmin && InputBlock) then
 {
 	Run *RunAs "%A_ScriptFullPath%"
 	ExitApp
 	return
 }
 
+if (DisconnectDetection) then ; gets file paths for disconnect screenshots
+{
+	global DisconnectSSC := 0 ; sdisconnect screenshot count
+	global DisconnectScreenshots := []
+	Loop, Files, % A_ScriptDir . "\*.png", FR
+	{
+		SplitPath, A_LoopFilePath, name, dir, ext, name_no_ext, drive
+		if InStr(name_no_ext, "connect") then
+		{
+			DisconnectSSC := DisconnectSSC + 1
+			DisconnectScreenshots.Push(A_LoopFilePath) ; puts file path in array
+		}
+		else
+		{
+			continue
+		}
+	}
+}
+
 if (HasSilverCutoff) then ; gets file paths for silver screenshots
 {
 	global SilverSSC := 0 ; silver screenshot count
-	global ScrollSSC := 0 ; scroll screenshot count
 	global SilverScreenshots := []
-	global ScrollScreenshots := []
 	Loop, Files, % A_ScriptDir . "\*.png", FR
 	{
 		SplitPath, A_LoopFilePath, name, dir, ext, name_no_ext, drive
@@ -76,12 +99,6 @@ if (HasSilverCutoff) then ; gets file paths for silver screenshots
 		{
 			SilverSSC := SilverSSC + 1
 			SilverScreenshots.Push(A_LoopFilePath) ; puts file path in array
-		}
-		else
-		if InStr(name_no_ext, "scroll") then
-		{
-			ScrollSSC := ScrollSSC + 1
-			ScrollScreenshots.Push(A_LoopFilePath) ; puts file path in array
 		}
 		else
 		{
@@ -92,6 +109,7 @@ if (HasSilverCutoff) then ; gets file paths for silver screenshots
 
 global ScrollSSC := 0 ; scroll screenshot count
 global ScrollScreenshots := []
+global ScrollNames := []
 Loop, Files, % A_ScriptDir . "\*.png", FR
 {
 	SplitPath, A_LoopFilePath, name, dir, ext, name_no_ext, drive
@@ -99,6 +117,7 @@ Loop, Files, % A_ScriptDir . "\*.png", FR
 	{
 		ScrollSSC := ScrollSSC + 1
 		ScrollScreenshots.Push(A_LoopFilePath) ; puts file path in array
+		ScrollNames.Push(StrSplit(name_no_ext, "scroll")[1])
 	}
 	else
 	{
@@ -106,9 +125,16 @@ Loop, Files, % A_ScriptDir . "\*.png", FR
 	}
 }
 
-global MacroIndex := 0 ; how many times it has looped
+for ScrollIndex, ScrollName in ScrollNames
+{
+	%ScrollName%Found := false
+}
 
+global WebhookMessage := ""
+
+global MacroIndex := 0 ; how many times it has looped
 global MacroForceStop := false
+
 global SleepTimer_Miliseconds := SleepTimer * 1000
 global MenuButtonShowTime := 6
 global MenuButtonShowTime_Miliseconds := MenuButtonShowTime * 1000
@@ -122,19 +148,27 @@ global ForceFieldCount := 0
 global ForceFieldWaitCount := 0
 global ForceFieldWaitTime_Miliseconds := ForceFieldWaitTime * 1000
 global ForceFieldCheckDuration_Miliseconds := ForceFieldCheckDuration * 1000
+global ForceFieldCheckDuration_2_Miliseconds := ForceFieldWaitCheckDetection * 1000
 global ForceFieldDetection_TopLeftCorner := [A_ScreenWidth // 2.74, A_ScreenHeight // 2.88]
 global ForceFieldDetection_BottomRightCorner := [A_ScreenWidth // 1.59, A_ScreenHeight // 1.32]
-global ForceFieldDetectionVariation_1 := 10
-global ForceFieldDetectionVariation_2 := 30
+global ForceFieldDetectionVariation_1 := 20
+global ForceFieldDetectionVariation_2 := 15
 global FirstForceFieldDetected := false
 global ForceFieldSecondsLeft := 0
 
-global GachaGuyColors := ["0xF5A0B7", "0xF6A3B8", "0xF5A2B6", "0x88444E", "0x7C0AAD", "0xFFDFC4", "0xFFFFC2"]
+global GachaGuyColors := ["0xF5A0B7", "0xF6A3B8", "0xF5A2B6", "0x88444E", "0x7C0AAD"] ; , "0xFFDFC4"]
+global GachaGuyColors := ["0xF5A0B7"]
+global GGDO := GachaGuyDetectionOffset ; shorter name
+global GachaGuyDetectionSections := [0 + GGDO, 0 + GGDO, 860, A_ScreenHeight - GGDO ; Left Section
+		, 0 + GGDO, 0 + GGDO, A_ScreenWidth - GGDO, 480 ; Top Section
+		, 1050, 0 + GGDO, A_ScreenWidth - GGDO, A_ScreenHeight - GGDO ; Right Section
+		, 0 + GGDO, 700, A_ScreenWidth - GGDO, A_ScreenHeight - GGDO] ; Bottom Section
 global GachaGuyCount := 0
-global GachaGuyDetectionVariation := 6
+global GachaGuyDetectionVariation := 25
 global GachaGuySpinStop := false
 global GGx := 0 ; gacha guy found x
 global GGy := 0 ; gacha guy found y
+global GachaGuyErrorLevel := 1
 
 global ScrollDetection_TopLeftCorner := [A_ScreenWidth // 4.09, A_ScreenHeight // 2.41]
 global ScrollDetection_BottomRightCorner := [A_ScreenWidth // 1.33, A_ScreenHeight // 1.08]
@@ -148,53 +182,39 @@ global LowSilver := false
 global NoGachaGuyIndex := [] ; if no detect then it will go here and put the MacroIndex
 
 global ScreenshotInterval_Miliseconds := ((ScreenshotInterval * 1000) * 60)
-global LastScreenshot := ScreenshotInterval_Miliseconds ; so it doesnt screenshot off the first macroindex
-return
-~*/::
-    Suspend On
-    Loop
-        if (GetKeyState("Enter", "P") || GetKeyState("Escape", "P") || GetKeyState("LButton", "P"))
-            break
-    Suspend Off
-return
-
-
-$f4::
-SetKeyDelay, -1
-SetMouseDelay, -1
-SetBatchLines, -1
-
-send {=}
+global LastScreenshot := 0
 return
 
 
 $f3::
+WinGet, RobloxID, ID, A
 MacroStartTime := A_TickCount ; sleep timer, etc
+LastScreenshot := A_TickCount ; so screenshotinterval doesnt happen on first macroindex
 
 Loop
 {
 
 if (MacroForceStop) then
 {
-	return ; make macro stop
+	WebhookMessage := "MACRO STOPPED"
+	SendWebhook(WebhookMessage)
+	return
 }
 
 MacroIndex++
 
-sleep, 25
-SendInput, \
-sleep, 25
-SendInput, {enter}
-SendInput, \
+ResetVariables()
+
+ToolTip, , , , 1
+
+if (InputBlock) then
+	BlockInput, On
+
+WinActivate, ahk_id %RobloxID%
+
+UiNavigation()
 
 ForceFieldStartTime_1 := A_TickCount
-
-if (TimeGainedToolTip) then
-{
-	; TimeGained gets turned into seconds and minutes
-	TimeGainedOutputText := "Time Gained: " Round((TimeGained / 1000), 0) " Seconds (" Round((TimeGained / 60000), 2) " Minute(s))"
-	ToolTip, % TimeGainedOutputText, % ToolTipCords[1], % ToolTipCords[2], 1
-}
 
 sleep, 3000 ; Bypasses lag if you spawn in while in a ping spike
 GoSub, UseChair
@@ -227,33 +247,44 @@ if (FirstForceFieldDetected) then
 			}
 		}
 	}
-
-	if (ForceFieldCount < ForceFieldCutoff) then ; NO FF
-	{
-		SendInput, \
-		sleep, 25
-		SendInput, {enter}
-		SendInput, \
-	}
 }
-else ; NO FF
+
+if (ForceFieldCount < ForceFieldCutoff) then ; NO FF
 {
-	SendInput, \
-	sleep, 25
-	SendInput, {enter}
-	SendInput, \
-	return ; make macro stop
+	UiNavigation()
+	
+	WebhookMessage := "NO FORCE FIELD`nFORCE FIELD COUNT: " ForceFieldCount
+	WebhookMessage .= "`nMACRO INDEX: " MacroIndex
+	WebhookMessage .= "``````INFORMATION:`nAfter Unmenuing`nDid not detect force field at first (Duration)`nOr`nDid not capture enough force field pixels (Cutoff)``````"
+	SendWebhook(WebhookMessage)
+	return
 }
 
 GachaGuyDetectionStartTime := A_TickCount
 while ((A_TickCount - GachaGuyDetectionStartTime) < (ForceFieldCheckDuration_Miliseconds * 2) && GachaGuyCount < 1)
 {
-	for index, GachaGuyColorID in GachaGuyColors
+	for GGi, GachaGuyColorID in GachaGuyColors
 	{
-		PixelSearch, GGx, GGy, 0, 0, % A_ScreenWidth, % A_ScreenHeight, % GachaGuyColorID, % GachaGuyDetectionVariation, Fast
-		if (ErrorLevel = 1) then
+		for GSi, Cords in GachaGuyDetectionSections
 		{
-			if (index != 1 && !GachaGuySpinStop) then
+			; its 4 cords for every section
+			; theres 4 sections
+			; it goes: 1, 5, 9, 13
+			Cords := GachaGuyDetectionSections ; makes it so that the pixel search doesnt go too far
+			if (GSi == 1 or GSi == 5 or GSi == 9 or GSi == 13) then
+			{
+				PixelSearch, GGx, GGy, % Cords[GSi], % Cords[GSi + 1], % Cords[GSi + 2], % Cords[GSi + 3], % GachaGuyColorID, % GachaGuyDetectionVariation, Fast
+				if (ErrorLevel == 0) then
+				{
+					GachaGuyErrorLevel := ErrorLevel
+					break
+				}
+			}
+		}
+		
+		if (GachaGuyErrorLevel = 1) then
+		{
+			if (!GachaGuySpinStop) then
 			{
 				sleep, 500
 				SendInput, {,}
@@ -261,7 +292,7 @@ while ((A_TickCount - GachaGuyDetectionStartTime) < (ForceFieldCheckDuration_Mil
 			}
 		}
 		else
-		if (ErrorLevel = 0) then
+		if (GachaGuyErrorLevel = 0) then
 		{
 			GachaGuyCount++
 			GachaGuySpinStop := true
@@ -285,8 +316,11 @@ if (GachaGuyCount >= 1) then
 		{
 			MouseMove, % CordValue, % PixelOffsetCords[index + 1] ; gets the y cords
 			sleep, 25
-			SendInput, {click}
-			sleep, 25
+			Loop, 3
+			{
+				SendInput, {click}
+				sleep, 25
+			}
 		}
 		else
 		{
@@ -296,30 +330,15 @@ if (GachaGuyCount >= 1) then
 	
 	sleep, 3000 ; Delay to let the captcha pop up
 	
-	SendInput, \
-	sleep, 25
-	SendInput, {down}
-	sleep, 25
-	SendInput, {enter}
-	SendInput, \
+	UiNavigation("down")
 	
 	sleep, 2000
 	
-	SendInput, \
-	sleep, 25
-	SendInput, {down}
-	sleep, 25
-	SendInput, {enter}
-	SendInput, \
+	UiNavigation("down")
 		
 	sleep, 6000
 	
-	SendInput, \
-	sleep, 25
-	SendInput, {down}
-	sleep, 25
-	SendInput, {enter}
-	SendInput, \
+	UiNavigation("down")
 	
 	; ^ the downs are because of the menu button.
 	
@@ -330,20 +349,27 @@ if (GachaGuyCount >= 1) then
 else ; NO GACHA GUY
 {
 	NoGachaGuyIndex.Push(MacroIndex)
+	WebhookMessage := "NO GACHA GUY`nNO GACHA GUY COUNT: " NoGachaGuyIndex.MaxIndex()
+	WebhookMessage .= "`nMACRO INDEX: " MacroIndex
+	SendWebhook(WebhookMessage)
 	if (NoGachaGuyIndex.MaxIndex() >= 3) then ; didnt detect gacha guy 3+ times
 	{
 		if (NoGachaGuyIndex[NoGachaGuyIndex.MaxIndex()] - NoGachaGuyIndex[NoGachaGuyIndex.MaxIndex() - 2] == 2) then
 		{
 			; ^ didnt detect 3 times in a row
+			UiNavigation()
+			
 			MacroForceStop := true
-			; WEBHOOK
+			
+			WebhookMessage := "NO GACHA GUY 3 TIMES IN A ROW"
+			WebhookMessage .= "`nMOST LIKELY HAVE DIED"
+			SendWebhook(WebhookMessage, true)
 		}
 		NoGachaGuyIndex := []
 	}
 }
 
 SendInput, `` ; open inv
-
 sleep, 1000 ; let inv open
 
 for SLindex, SLFilePath in ScrollScreenshots
@@ -351,8 +377,33 @@ for SLindex, SLFilePath in ScrollScreenshots
 	ImageSearch, SLx, SLy, % ScrollDetection_TopLeftCorner[1], % ScrollDetection_TopLeftCorner[2], % ScrollDetection_BottomRightCorner[1], % ScrollDetection_BottomRightCorner[2], % "*" ScrollDetectionVariation " " SLFilePath
 	if (ErrorLevel = 0) then
 	{
-		; webhook, autopop, something
-		break
+		for ScrollIndex, ScrollName in ScrollNames
+		{
+			if InStr(SLFilePath, ScrollName) then
+			{
+				if !(%ScrollName%Found) then
+					SendWebhook("ROLLED: " ScrollName, true)
+				%ScrollName%Found := true
+			}
+			
+			if (HasSnarvCutoff) then
+			{
+				if InStr(ScrollName, "snarv") then
+					MacroForceStop := true
+			}
+
+			if (HasHoppaCutoff) then
+			{
+				if InStr(ScrollName, "hoppa") then
+					MacroForceStop := true
+			}
+			
+			if (HasPercCutoff) then
+			{
+				if InStr(ScrollName, "perc") then
+					MacroForceStop := true
+			}
+		}
 	}
 	else
 	{
@@ -360,19 +411,33 @@ for SLindex, SLFilePath in ScrollScreenshots
 	}
 }
 
-for SRindex, SRFilePath in SilverScreenshots
+if !(LowSilver) then
 {
-	ImageSearch, SRx, SRy, % SilverDetection_TopLeftCorner[1], % SilverDetection_TopLeftCorner[2], % SilverDetection_BottomRightCorner[1], % SilverDetection_BottomRightCorner[2], % "*" SilverDetectionVariation " " SRFilePath
-	if (ErrorLevel = 0) then
+	for SRindex, SRFilePath in SilverScreenshots
 	{
-		LowSilver := true
-		; webhook
-		break
+		ImageSearch, SRx, SRy, % SilverDetection_TopLeftCorner[1], % SilverDetection_TopLeftCorner[2], % SilverDetection_BottomRightCorner[1], % SilverDetection_BottomRightCorner[2], % "*" SilverDetectionVariation " " SRFilePath
+		if (ErrorLevel = 0) then
+		{
+			MacroForceStop := true
+			LowSilver := true
+			SendWebhook("LOW ON SILVER", true)
+			break
+		}
+		else
+		{
+			continue
+		}
 	}
-	else
-	{
-		continue
-	}
+}
+
+sleep, 1000 ; let checks happen
+SendInput, `` ; close inv
+
+if (TimeGainedToolTip) then
+{
+	; TimeGained gets turned into seconds and minutes
+	TimeGainedOutputText := "Time Gained: " Round((TimeGained / 1000), 0) " Seconds (" Round((TimeGained / 60000), 2) " Minute(s))"
+	ToolTip, % TimeGainedOutputText, % ToolTipCords[1], % ToolTipCords[2], 1
 }
 
 if ((MacroStartTime - ScreenshotInterval_Miliseconds) >= 0) then
@@ -389,36 +454,45 @@ if ((MacroStartTime - ScreenshotInterval_Miliseconds) >= 0) then
 		SendInput, {alt up}
 		ScreenshotFilePath := A_ScriptDir . "\Screenshots" . "\Index" . MacroIndex . "Screenshot.png"
 		RunWait, PowerShell -Command "Add-Type -AssemblyName System.Windows.Forms; $clipboard = [Windows.Forms.Clipboard]::GetImage(); $clipboard.Save('%ScreenshotFilePath%')",, Hide
-		; webhook
+		SendWebhook("MACRO INDEX: " MacroIndex, false, ScreenshotFilePath)
 	}
 }
 
+if (InputBlock) then
+	BlockInput, Off
+
 while ((A_TickCount - ForceFieldStartTime_1) < (ForceFieldWaitTime_Miliseconds))
 {
-	sleep, 500 ; delay so that its not that laggy
-	
 	if (ForceFieldWaitDetection) then
 	{
+		Temp_ForceFieldWaitCount := ForceFieldWaitCount ; 0
 		ForceFieldDetectionStartTime_2 := A_TickCount
-		while ((A_TickCount - ForceFieldDetectionStartTime_2) < ForceFieldCheckDuration_Miliseconds && ForceFieldWaitCount <= ForceFieldCutoff)
+		while ((A_TickCount - ForceFieldDetectionStartTime_2) < ForceFieldCheckDuration_2_Miliseconds && Temp_ForceFieldWaitCount < ForceFieldCutoff)
 		{
 			for index, ForceFieldColorID in ForceFieldColors
 			{
 				PixelSearch, FFx, FFy, % ForceFieldDetection_TopLeftCorner[1], % ForceFieldDetection_TopLeftCorner[2], % ForceFieldDetection_BottomRightCorner[1], % ForceFieldDetection_BottomRightCorner[2], % ForceFieldColorID, % ForceFieldDetectionVariation_2, Fast
 				if (ErrorLevel = 0) then
 				{
-					ForceFieldWaitCount++
+					Temp_ForceFieldWaitCount++
+					if (Temp_ForceFieldWaitCount >= ForceFieldCutoff) then
+					{
+						break
+					}
 				}
 			}
+		}
+		
+		if (Temp_ForceFieldWaitCount && Temp_ForceFieldWaitCount < ForceFieldCutoff) then ; NO FF
+		{
+			UiNavigation()
 			
-			if (ForceFieldWaitCount < ForceFieldCutoff) then ; NO FF
-			{
-				SendInput, \
-				sleep, 25
-				SendInput, {enter}
-				SendInput, \
-				return ; make macro stop
-			}
+			WebhookMessage := "NO FORCE FIELD`nFORCE FIELD COUNT: " Temp_ForceFieldWaitCount
+			WebhookMessage .= "`nMACRO INDEX: " MacroIndex
+			WebhookMessage .= "``````INFORMATION:`nDuring Force Field Wait`nDid not detect force field at first (Duration)`nOr`nDid not capture enough force field pixels (Cutoff)``````"
+			SendWebhook(WebhookMessage)
+			
+			return ; make macro stop
 		}
 	}
 	
@@ -428,35 +502,31 @@ while ((A_TickCount - ForceFieldStartTime_1) < (ForceFieldWaitTime_Miliseconds))
 		ToolTip, % "Waiting: " ForceFieldSecondsLeft " seconds...", % ToolTipCords[3], % ToolTipCords[4], 2
 	}
 }
+
+if (InputBlock) then
+	BlockInput, On
+
+WinActivate, ahk_id %RobloxID%
+
 ToolTip, , , , 2 ; removes the tooltip
 TimeGained := TimeGained + (A_TickCount - ForceFieldStartTime_1)
 
 Loop, 3
 {
-	sleep, 25
-	SendInput, \
-	sleep, 25
-	SendInput, {enter}
-	SendInput, \
+	UiNavigation()
 }
-
-sleep, % 10 * 1000 ; delay so the play button can show up again.
-}
-
-; ===============================================
-; things that make the macro stop
 
 if (SleepTimer) then
 {
 	if (SleepTimer_Miliseconds >= (A_TickCount - MacroStartTime)) then
 	{
-		; make macro stop
+		MacroForceStop := true
+		SendWebhook("HIT SLEEP TIMER`nMACRO INDEX: " MacroIndex)
 	}
 }
 
-if (LowSilver) then
-{
-	; make macro stop
+sleep, % 10 * 1000 ; delay so the play button can show up again.
+ResetVariables()
 }
 return
 
@@ -498,6 +568,67 @@ Loop, 20
 sleep, 25
 SendInput, % ChairSlot
 return
+
+
+ResetVariables() {
+	global
+	
+	FirstForceFieldDetected := false
+	ForceFieldCount := 0
+	GachaGuyErrorLevel := 1
+	GachaGuyCount := 0
+	GachaGuySpinStop := false
+	Temp_ForceFieldWaitCount := 0
+}
+
+
+UiNavigation(Direction := "") {
+	global
+	
+	SendInput, \
+	sleep, 25
+	if (Direction != "") then
+	{
+		SendInput, {%Direction%}
+		sleep, 25
+	}
+	SendInput, {enter}
+	sleep, 25
+	SendInput, \
+}
+
+
+SendWebhook(Message := "", Ping := false, ImagePath := "") {
+	global
+	
+	if (Ping) then
+		Message .= "`n<@" DiscordUserID ">"
+		
+	if Instr(Message, "NO") then
+	{
+		ToolTip, , , , 1
+		ToolTip, , , , 2
+	}
+	
+	TempLogFile := A_ScriptDir . "\DiscordWebhook\DiscordWebhookLog.txt"
+	TempMessageSendFile := A_ScriptDir . "\DiscordWebhook\DiscordWebhookMessage.txt"
+	FileDelete, %TempMessageSendFile%
+	FileAppend, %Message%, %TempMessageSendFile%
+	
+	Webhook := WebhookURL
+	if (ImagePath != "") then
+		Webhook := ScreenshotWebhookURL
+	
+	Command := "curl -s -X POST """ Webhook """"
+	Command .= " -F ""content=<" TempMessageSendFile """"
+	if (ImagePath != "") then
+		Command .= " -F ""files[0]=@" ImagePath """"
+	Command .= " -o """ TempLogFile """"
+	
+	RunWait, % ComSpec " /C " Command,, Hide
+	FileRead, Response, %TempLogFile%
+	return Response
+}
 
 
 #If
