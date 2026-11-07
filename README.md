@@ -1,6 +1,6 @@
 <h1 align="center">Rogue-Lineage-Gacha-Macro</h1>
 
-### A macro for Rogue Lineage's gacha system that's for either public servers or 23's (Uses FF).
+<h3 align="center">A macro for Rogue Lineage's gacha system that's for either public servers or 23's (Uses FF).</h3>
 
 Not meant to be read if you somehow find this.
 I'm also not sure if all the features work according to how they should.
