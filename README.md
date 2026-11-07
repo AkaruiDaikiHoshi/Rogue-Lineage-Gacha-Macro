@@ -26,3 +26,7 @@ You can add more scroll screenshots by:
 
 The added screenshots won't be added onto the gui
 but they will be detected by the macro
+
+----------------------------------------------------------------------------------
+
+![image alt](https://github.com/AkaruiDaikiHoshi/Rogue-Lineage-Gacha-Macro/blob/94679d15cbd7d6f79fb424fd66a1088106edd7d9/Screenshots/Index1Screenshot.png)
