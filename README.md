@@ -19,8 +19,10 @@ You can add more silver screenshots by:
 The added screenshots will be added onto the gui dropdownlist
 
 You can add more scroll screenshots by:
+
     putting the name of the scroll and then "scroll" with no spaces
     like: hoppascroll, snarvscroll
     make sure it's somewhat similar to the screenshots I have already
+
 The added screenshots won't be added onto the gui
 but they will be detected by the macro
