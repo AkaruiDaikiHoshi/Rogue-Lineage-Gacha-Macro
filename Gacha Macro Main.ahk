@@ -52,6 +52,8 @@ IniRead, PercCutoff, % IniFile, % IniFileSection, PercCutoff
 IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
 IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
 IniRead, ScrollAutoPop, % IniFile, % IniFileSection, ScrollAutoPop
+IniRead, PlayerCountCutoff, % IniFile, % IniFileSection, PlayerCountCutoff
+IniRead, PlayerDetectionPath, % IniFile, % IniFileSection, PlayerDetectionPath
 
 global InputBlock := InputBlock == "On"
 global TimeGainedToolTip := TimeGainedToolTip == "On"
@@ -63,6 +65,9 @@ global HasPercCutoff := PercCutoff == "On"
 
 global DisconnectDetection := DisconnectDetection == "On" ; idk
 global ScrollAutoPop := ScrollAutoPop == "On"
+if (PlayerCountCutoff == "ERROR") then
+	PlayerCountCutoff := 1
+global PlayerDetectionStop := PlayerDetectionPath == "Stop"
 
 if (!A_IsAdmin && InputBlock) then
 {
@@ -132,6 +137,10 @@ for ScrollIndex, ScrollName in ScrollNames
 	%ScrollName%Found := false
 }
 
+global MenuButtonFilePath := A_ScriptDir . "\OtherScreenshots\menubutton.png"
+global MenuButtonDetectionVariation := 6
+global MenuDetectionStartTime := 0
+
 global WebhookMessage := ""
 
 global MacroIndex := 0 ; how many times it has looped
@@ -145,6 +154,10 @@ global TimeGainedOutputText := ""
 global ToolTipCords := [A_ScreenWidth // 1.52, A_ScreenHeight // 1.91, A_ScreenWidth // 1.52, A_ScreenHeight // 2]
 global ScreenshotFilePath := ""
 
+global PlayerCount := 0
+global PlayerNameColors := ["0xE3E4E4", "0xD3D4D4"]
+global PlayerNameDetectionVariation := 6
+
 global ForceFieldColors := ["0xB9B496", "0x9FA16B", "0xC2C6A2", "0x50A787", "0xD3D8C8", "0xBBB699"]
 global ForceFieldCount := 0
 global ForceFieldWaitCount := 0
@@ -157,6 +170,7 @@ global ForceFieldDetectionVariation_1 := 20
 global ForceFieldDetectionVariation_2 := 15
 global FirstForceFieldDetected := false
 global ForceFieldSecondsLeft := 0
+global ForceFieldMilisecondsLeft := 0
 
 global GachaGuyColors := ["0xF5A0B7", "0xF6A3B8", "0xF5A2B6", "0x88444E", "0x7C0AAD"] ; , "0xFFDFC4"]
 global GachaGuyColors := ["0xF5A0B7"]
@@ -174,7 +188,7 @@ global GachaGuyErrorLevel := 1
 
 global ScrollDetection_TopLeftCorner := [A_ScreenWidth // 4.09, A_ScreenHeight // 2.41]
 global ScrollDetection_BottomRightCorner := [A_ScreenWidth // 1.33, A_ScreenHeight // 1.08]
-global ScrollDetectionVariation := 120
+global ScrollDetectionVariation := 60
 
 global SilverDetection_TopLeftCorner := [0, A_ScreenHeight // 1.05] ; its on the far left so thats why x is 0
 global SilverDetection_BottomRightCorner := [A_ScreenWidth // 15.23, A_ScreenHeight] ; bottom of screen
@@ -184,6 +198,7 @@ global LowSilver := false
 global NoGachaGuyIndex := [] ; if no detect then it will go here and put the MacroIndex
 
 global ScreenshotInterval_Miliseconds := ((ScreenshotInterval * 1000) * 60)
+global ScreenshotIntervalWaitOffset := 10 * 1000 ; makes it 10 seconds
 global LastScreenshot := 0
 return
 
@@ -199,7 +214,7 @@ Loop
 if (MacroForceStop) then
 {
 	WebhookMessage := "MACRO STOPPED"
-	SendWebhook(WebhookMessage)
+	SendWebhook(WebhookMessage, true)
 	return
 }
 
@@ -253,7 +268,7 @@ if (FirstForceFieldDetected) then
 
 if (ForceFieldCount < ForceFieldCutoff) then ; NO FF
 {
-	UiNavigation()
+	UiNavigation("", "Menu")
 	
 	WebhookMessage := "NO FORCE FIELD`nFORCE FIELD COUNT: " ForceFieldCount
 	WebhookMessage .= "`nMACRO INDEX: " MacroIndex
@@ -359,7 +374,7 @@ else ; NO GACHA GUY
 		if (NoGachaGuyIndex[NoGachaGuyIndex.MaxIndex()] - NoGachaGuyIndex[NoGachaGuyIndex.MaxIndex() - 2] == 2) then
 		{
 			; ^ didnt detect 3 times in a row
-			UiNavigation()
+			UiNavigation("", "Menu")
 			
 			MacroForceStop := true
 			
@@ -384,43 +399,48 @@ for SLindex, SLFilePath in ScrollScreenshots
 			if InStr(SLFilePath, ScrollName) then
 			{
 				if !(%ScrollName%Found) then
-					SendWebhook("ROLLED: " ScrollName, true)
+				{
+					StringUpper, UpperCaseScrollName, ScrollName
+					ScreenshotScrollFilePath := A_ScriptDir . "\Screenshots" . "\Index" . MacroIndex . "Scroll" . UpperCaseScrollName . "Screenshot.png"
+					TakeScreenshot(ScreenshotScrollFilePath)
+					SendWebhook("ROLLED: " UpperCaseScrollName, true, ScreenshotScrollFilePath)
+				}
 				%ScrollName%Found := true
-			}
 			
-			if (HasSnarvCutoff) then
-			{
-				if InStr(ScrollName, "snarv") then
-					MacroForceStop := true
-			}
+				if (HasSnarvCutoff) then
+				{
+					if InStr(ScrollName, "snarv") then
+						MacroForceStop := true
+				}
 
-			if (HasHoppaCutoff) then
-			{
-				if InStr(ScrollName, "hoppa") then
-					MacroForceStop := true
-			}
-			
-			if (HasPercCutoff) then
-			{
-				if InStr(ScrollName, "perc") then
-					MacroForceStop := true
-			}
-			
-			if (ScrollAutoPop) then
-			{
-				MouseMove, SLx, SLy
-				sleep, 250 ; delay
-				SendInput, {click}
-				sleep, 250 ; delay
-				SendInput, `` ; inv is already opened so this closes it
-				sleep, 250 ; delay
-				MouseMove, % PixelOffsetCords[1], % PixelOffsetCords[2] ; moves to a clickable place
-				sleep, 250 ; delay
-				SendInput, {click} ; pops scroll
-				sleep, 250 ; delay
-				SendInput, `` ; inv is already closed so this opens it
-				sleep, 250
-				SendInput, % ChairSlot ChairSlot ; equips and unequips chair so you have nothing equipped
+				if (HasHoppaCutoff) then
+				{
+					if InStr(ScrollName, "hoppa") then
+						MacroForceStop := true
+				}
+				
+				if (HasPercCutoff) then
+				{
+					if InStr(ScrollName, "perc") then
+						MacroForceStop := true
+				}
+				
+				if (ScrollAutoPop) then
+				{
+					MouseMove, SLx, SLy
+					sleep, 250 ; delay
+					SendInput, {click}
+					sleep, 250 ; delay
+					SendInput, `` ; inv is already opened so this closes it
+					sleep, 250 ; delay
+					MouseMove, % PixelOffsetCords[1], % PixelOffsetCords[2] ; moves to a clickable place
+					sleep, 250 ; delay
+					SendInput, {click} ; pops scroll
+					sleep, 250 ; delay
+					SendInput, `` ; inv is already closed so this opens it
+					sleep, 250
+					SendInput, % ChairSlot ChairSlot ; equips and unequips chair so you have nothing equipped
+				}
 			}
 		}
 	}
@@ -465,14 +485,15 @@ if ((MacroStartTime - ScreenshotInterval_Miliseconds) >= 0) then
 	{
 		; ^ if the time between current and last screenshot is more than
 		; whatever screenshotinterval is
+		
+		; Minimizing delay (well at least it should)
+		ForceFieldMilisecondsLeft := (ForceFieldWaitTime_Miliseconds - (A_TickCount - ForceFieldStartTime_1))
+		if (((A_TickCount - LastScreenshot) + (ForceFieldMilisecondsLeft)) > ScreenshotInterval_Miliseconds - ScreenshotIntervalWaitOffset) then
+			sleep, % ScreenshotInterval_Miliseconds - (A_TickCount - LastScreenshot) + ScreenshotIntervalWaitOffset
+		
 		LastScreenshot := A_TickCount
-		SendInput, {alt down}
-		sleep, 250
-		SendInput, {PrintScreen}
-		sleep, 250
-		SendInput, {alt up}
-		ScreenshotFilePath := A_ScriptDir . "\Screenshots" . "\Index" . MacroIndex . "Screenshot.png"
-		RunWait, PowerShell -Command "Add-Type -AssemblyName System.Windows.Forms; $clipboard = [Windows.Forms.Clipboard]::GetImage(); $clipboard.Save('%ScreenshotFilePath%')",, Hide
+		ScreenshotIntervalFilePath := A_ScriptDir . "\Screenshots" . "\Index" . MacroIndex . "Screenshot.png"
+		TakeScreenshot(ScreenshotIntervalFilePath)
 		SendWebhook("MACRO INDEX: " MacroIndex, false, ScreenshotFilePath)
 	}
 }
@@ -504,7 +525,7 @@ while ((A_TickCount - ForceFieldStartTime_1) < (ForceFieldWaitTime_Miliseconds))
 		
 		if (Temp_ForceFieldWaitCount && Temp_ForceFieldWaitCount < ForceFieldCutoff) then ; NO FF
 		{
-			UiNavigation()
+			UiNavigation("", "Menu")
 			
 			WebhookMessage := "NO FORCE FIELD`nFORCE FIELD COUNT: " Temp_ForceFieldWaitCount
 			WebhookMessage .= "`nMACRO INDEX: " MacroIndex
@@ -514,6 +535,9 @@ while ((A_TickCount - ForceFieldStartTime_1) < (ForceFieldWaitTime_Miliseconds))
 			return ; make macro stop
 		}
 	}
+	
+	if (PlayerSearch()) then
+		break
 	
 	if (TimeGainedToolTip) then
 	{
@@ -532,7 +556,7 @@ TimeGained := TimeGained + (A_TickCount - ForceFieldStartTime_1)
 
 Loop, 3
 {
-	UiNavigation()
+	UiNavigation("", "Menu")
 }
 
 if (SleepTimer) then
@@ -602,7 +626,7 @@ ResetVariables() {
 }
 
 
-UiNavigation(Direction := "") {
+UiNavigation(Direction := "", IsMenu := "") {
 	global
 	
 	SendInput, \
@@ -615,6 +639,129 @@ UiNavigation(Direction := "") {
 	SendInput, {enter}
 	sleep, 25
 	SendInput, \
+	
+	if (Direction == "" && IsMenu != "") then
+	{
+		MenuDetectionStartTime := A_TickCount
+		InMenu := false
+		while (!InMenu && (A_TickCount - MenuDetectionStartTime) <= 3 * 1000) ; 3 seconds cutoff
+		{
+			ImageSearch, FoundX, FoundY, 0, 0, % A_ScreenWidth, % A_ScreenHeight, % "*" MenuButtonDetectionVariation " " MenuButtonFilePath
+			if (ErrorLevel == 0) then
+			{
+				SendInput, \
+				sleep, 25
+				SendInput, {enter}
+				sleep, 25
+				SendInput, \
+				sleep, 250
+			}
+			else
+			if (ErrorLevel == 1) then
+			{
+				; cant find
+				InMenu := true
+			}
+		}
+		
+		if (!InMenu) then
+			SendWebhook("MAY NOT BE IN MENU`nMACRO INDEX: " MacroIndex, true)
+	}
+}
+
+
+PlayerSearch() {
+	global
+	
+	PlayerCount := 0
+	
+	Loop, 3
+	{
+		for index, value in PlayerNameColors
+		{
+			PixelSearch, Plx, Ply, 0, 0, % A_ScreenWidth, % A_ScreenHeight, % value, % PlayerNameDetectionVariation, Fast
+			if (ErrorLevel == 0) then
+				PlayerCount++
+			
+			if (PlayerCount >= PlayerCountCutoff) then
+				break
+		}
+		if (PlayerCount >= PlayerCountCutoff) then
+			break
+	}
+	
+	if (PlayerCount >= PlayerCountCutoff) then
+	{
+		UiNavigation("", "Menu")
+		if (PlayerDetectionStop) then
+		{
+			MacroForceStop := true
+			SendWebhook("DETECTED PLAYER`nDETECTION PATH: " PlayerDetectionPath)
+		}
+		else
+		{
+			SendWebhook("DETECTED PLAYER`nDETECTION PATH: " PlayerDetectionPath, true)
+		
+			sleep, % 8 * 1000
+			SendInput, \
+			sleep, 25
+			SendInput, {down}
+			sleep, 25
+			SendInput, {down}
+			sleep, 25
+			SendInput, {enter}
+			sleep, 25
+			SendInput, \
+			
+			sleep, 25
+			
+			SendInput, \
+			sleep, 25
+			SendInput, {right}
+			sleep, 25
+			SendInput, {right}
+			sleep, 25
+			SendInput, {enter}
+			sleep, 25
+			SendInput, \
+			
+			sleep, 25
+			
+			SendInput, \
+			sleep, 25
+			SendInput, {down}
+			sleep, 25
+			SendInput, {down}
+			sleep, 25
+			Loop, 3
+			{
+				SendInput, {down}
+				sleep, 25
+			}
+			SendInput, {enter}
+			sleep, 25
+			SendInput, \
+			;sleep, % 30 * 1000
+		}
+		
+		return true
+	}
+}
+
+
+TakeScreenshot(SSFilePath) {
+	; SSFilePath stands for ScreenshotFilePath
+	global
+	
+	SplitPath, SSFilePath, , Screenshot_dir
+	
+	SendInput, {alt down}
+	sleep, 250
+	SendInput, {PrintScreen}
+	sleep, 250
+	SendInput, {alt up}
+	if FileExist(Screenshot_dir) then
+		RunWait, PowerShell -Command "Add-Type -AssemblyName System.Windows.Forms; $clipboard = [Windows.Forms.Clipboard]::GetImage(); $clipboard.Save('%SSFilePath%')",, Hide
 }
 
 
