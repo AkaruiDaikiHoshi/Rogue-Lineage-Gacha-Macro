@@ -45,7 +45,9 @@ global SettingDefaults := {"WebhookURL": ""
 	
 global SettingEasterEggs := {"ErrorIgnore": false
 	, "DisconnectDetection": "Off"
-	, "ScrollAutoPop": "Off"}
+	, "ScrollAutoPop": "Off"
+	, "PlayerCountCutoff": 1
+	, "PlayerDetectionPath": "Stop"}
 
 LoadVariables(SettingDefaults, IniFile, IniFileSection)
 
@@ -684,22 +686,21 @@ CreateGui2() {
 	Gui, Add, Text, vDummyText x-1000 y-1000 w0 h0, Dummy Text
 	
 	Gui, %Gui2_Name%:Add, Text, x10 y10, Scroll Auto Pop
+	Gui, %Gui2_Name%:Add, Text, x10 y40, Player Count Cutoff
+	Gui, %Gui2_Name%:Add, Text, x10 y70, Player Detection Path
 	
 	if (ScrollAutoPop == "On") then
-		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x100 y7 w40, % "Off|On||"
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x110 y7 w40, % "Off|On||"
 	else
-		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x110 y8 w40, % "Off||On"
-	/*
-	Gui, %Gui2_Name%:Add, Text, x10 y10, Error Ignore
-	Gui, %Gui2_Name%:Add, Text, x10 y40, Disconnect Detection
-	
-	
-	Gui, %Gui2_Name%:Add, CheckBox, gUpdateEasterEggSettings vErrorIgnoreSaveInput Checked%ErrorIgnore% x90 y11, 
-	if (DisconnectDetection == "On") then
-		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vDisconnectDetectionSaveInput x145 y36 w40, % "Off|On||"
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x110 y7 w40, % "Off||On"
+		
+	if (PlayerDetectionPath == "Hop") then
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Stop|Hop||"
 	else
-		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vDisconnectDetectionSaveInput x145 y36 w40, % "Off||On"
-	*/
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Stop||Hop"
+	
+	Gui, %Gui2_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
+	Gui, %Gui2_Name%:Add, Edit, gUpdateEasterEggSettings vPlayerCountCutoffSaveInput Number x130 y37 w40 h25, % PlayerCountCutoff
 	
 	Gui, %Gui2_Name%:+AlwaysOnTop +ToolWindow -Caption
 	Gui, %Gui2_Name%:Show, % "NoActivate W" Gui_Width2 " H" Gui_Height2 " X" Gui_XPos2 " Y" Gui_YPos2, Easter Egg Gui
