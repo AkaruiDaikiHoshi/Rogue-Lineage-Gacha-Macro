@@ -34,4 +34,5 @@ but they will be detected by the macro
 <h3 align="center">Issues</h3>
 
 Idk why but some images don't like loading correctly.
+
 Macro may not work on other resolutions that aren't 1080p.
