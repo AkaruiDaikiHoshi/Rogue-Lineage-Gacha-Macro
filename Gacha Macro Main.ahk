@@ -9,7 +9,7 @@ Process Priority,, High
 #KeyHistory 0
 ListLines Off
 SetBatchLines, -1
-SetKeyDelay, -1, -1
+SetKeyDelay, -1 ; , -1
 SetMouseDelay, -1
 ;SetDefaultMouseSpeed, 0
 SetWinDelay, -1
@@ -155,8 +155,8 @@ global ToolTipCords := [A_ScreenWidth // 1.52, A_ScreenHeight // 1.91, A_ScreenW
 global ScreenshotFilePath := ""
 
 global PlayerCount := 0
-global PlayerNameColors := ["0xE3E4E4", "0xD3D4D4"]
-global PlayerNameDetectionVariation := 6
+global PlayerNameColors := ["0xE9EAE9", "0xB6B8B5"]
+global PlayerNameDetectionVariation := 3
 
 global ForceFieldColors := ["0xB9B496", "0x9FA16B", "0xC2C6A2", "0x50A787", "0xD3D8C8", "0xBBB699"]
 global ForceFieldCount := 0
@@ -175,10 +175,10 @@ global ForceFieldMilisecondsLeft := 0
 global GachaGuyColors := ["0xF5A0B7", "0xF6A3B8", "0xF5A2B6", "0x88444E", "0x7C0AAD"] ; , "0xFFDFC4"]
 global GachaGuyColors := ["0xF5A0B7"]
 global GGDO := GachaGuyDetectionOffset ; shorter name
-global GachaGuyDetectionSections := [0 + GGDO, 0 + GGDO, 860, A_ScreenHeight - GGDO ; Left Section
-		, 0 + GGDO, 0 + GGDO, A_ScreenWidth - GGDO, 480 ; Top Section
-		, 1050, 0 + GGDO, A_ScreenWidth - GGDO, A_ScreenHeight - GGDO ; Right Section
-		, 0 + GGDO, 700, A_ScreenWidth - GGDO, A_ScreenHeight - GGDO] ; Bottom Section
+global GachaGuyDetectionSections := [0 + GGDO, 0 + GGDO, A_ScreenWidth / 2.23, A_ScreenHeight - GGDO ; Left Section
+		, 0 + GGDO, 0 + GGDO, A_ScreenWidth - GGDO, A_ScreenHeight / 2.25 ; Top Section
+		, A_ScreenWidth / 1.82, 0 + GGDO, A_ScreenWidth - GGDO, A_ScreenHeight - GGDO ; Right Section
+		, 0 + GGDO, A_ScreenHeight / 1.54, A_ScreenWidth - GGDO, A_ScreenHeight - GGDO] ; Bottom Section
 global GachaGuyCount := 0
 global GachaGuyDetectionVariation := 25
 global GachaGuySpinStop := false
@@ -333,7 +333,7 @@ if (GachaGuyCount >= 1) then
 		{
 			MouseMove, % CordValue, % PixelOffsetCords[index + 1] ; gets the y cords
 			sleep, 25
-			Loop, 3
+			Loop, 5
 			{
 				SendInput, {click}
 				sleep, 25
@@ -554,6 +554,13 @@ WinActivate, ahk_id %RobloxID%
 ToolTip, , , , 2 ; removes the tooltip
 TimeGained := TimeGained + (A_TickCount - ForceFieldStartTime_1)
 
+if (TimeGainedToolTip) then
+{
+	; TimeGained gets turned into seconds and minutes
+	TimeGainedOutputText := "Time Gained: " Round((TimeGained / 1000), 0) " Seconds (" Round((TimeGained / 60000), 2) " Minute(s))"
+	ToolTip, % TimeGainedOutputText, % ToolTipCords[1], % ToolTipCords[2], 1
+}
+
 Loop, 3
 {
 	UiNavigation("", "Menu")
@@ -642,11 +649,12 @@ UiNavigation(Direction := "", IsMenu := "") {
 	
 	if (Direction == "" && IsMenu != "") then
 	{
+		sleep, % 1 * 1000
 		MenuDetectionStartTime := A_TickCount
 		InMenu := false
-		while (!InMenu && (A_TickCount - MenuDetectionStartTime) <= 3 * 1000) ; 3 seconds cutoff
+		while (!InMenu && (A_TickCount - MenuDetectionStartTime) <= 1 * 1000) ; 1 second cutoff
 		{
-			ImageSearch, FoundX, FoundY, 0, 0, % A_ScreenWidth, % A_ScreenHeight, % "*" MenuButtonDetectionVariation " " MenuButtonFilePath
+			ImageSearch, FoundX, FoundY, % A_ScreenWidth / 2, 0, % A_ScreenWidth, % A_ScreenHeight / 2, % "*" MenuButtonDetectionVariation " " MenuButtonFilePath
 			if (ErrorLevel == 0) then
 			{
 				SendInput, \
@@ -675,11 +683,11 @@ PlayerSearch() {
 	
 	PlayerCount := 0
 	
-	Loop, 3
+	Loop, 1
 	{
 		for index, value in PlayerNameColors
 		{
-			PixelSearch, Plx, Ply, 0, 0, % A_ScreenWidth, % A_ScreenHeight, % value, % PlayerNameDetectionVariation, Fast
+			PixelSearch, Plx, Ply, % A_ScreenWidth / 29.53, % A_ScreenHeight / 16.61, % A_ScreenWidth / 1.14, % A_ScreenHeight / 1.2, % value, % PlayerNameDetectionVariation, Fast
 			if (ErrorLevel == 0) then
 				PlayerCount++
 			
@@ -692,15 +700,15 @@ PlayerSearch() {
 	
 	if (PlayerCount >= PlayerCountCutoff) then
 	{
-		UiNavigation("", "Menu")
+		;UiNavigation("", "Menu")
 		if (PlayerDetectionStop) then
 		{
 			MacroForceStop := true
-			SendWebhook("DETECTED PLAYER`nDETECTION PATH: " PlayerDetectionPath)
+			SendWebhook("DETECTED PLAYER`nDETECTION PATH: " PlayerDetectionPath "`nPLAYER CORDS: " Plx ", " Ply)
 		}
 		else
 		{
-			SendWebhook("DETECTED PLAYER`nDETECTION PATH: " PlayerDetectionPath, true)
+			SendWebhook("DETECTED PLAYER`nDETECTION PATH: " PlayerDetectionPath "`nPLAYER CORDS: " Plx ", " Ply, true)
 		
 			sleep, % 8 * 1000
 			SendInput, \
@@ -741,7 +749,7 @@ PlayerSearch() {
 			SendInput, {enter}
 			sleep, 25
 			SendInput, \
-			;sleep, % 30 * 1000
+			sleep, % 3 * 1000
 		}
 		
 		return true
