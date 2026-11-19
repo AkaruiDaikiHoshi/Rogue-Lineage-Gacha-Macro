@@ -10,6 +10,13 @@ It will be buggy at some times due to lag and/or other things.
 I have also removed the function of some features.
 They are still in the code though.
 
+Instructions:
+
+    Open Gui, set up settings/webhooks. (Normal settings work but you do need a webhook url)
+    Open Main
+    Make sure roblox is full screened and is on 1 graphics.
+    Be on the menu screen with roblox active, press F3 to start, F7 to stop.
+
 ----------------------------------------------------------------------------------
 <h3 align="center">Settings Change</h3>
 
