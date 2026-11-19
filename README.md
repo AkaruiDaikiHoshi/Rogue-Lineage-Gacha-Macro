@@ -10,7 +10,7 @@ It will be buggy at some times due to lag and/or other things.
 I have also removed the function of some features.
 They are still in the code though.
 
-Instructions:
+<h3 align="center">Instructions</h3>
 
     Open Gui, set up settings/webhooks. (Normal settings work but you do need a webhook url)
     Open Main
