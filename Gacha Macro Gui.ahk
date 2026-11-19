@@ -21,6 +21,8 @@ for FolderIndex, FolderName in MacroFolders
 		FileCreateDir, % %FolderName%Path
 }
 
+Msgbox, I would recommend downloading the screenshots from the GitHub repo
+
 global SettingDefaults := {"WebhookURL": ""
     , "ScreenshotWebhookURL": ""
     , "ChairSlot": 1
@@ -80,6 +82,24 @@ for index, value in SilverCoList
 	}
 }
 
+global ScrollSSC := 0 ; scroll screenshot count
+global ScrollScreenshots := []
+global ScrollNames := ""
+Loop, Files, % A_ScriptDir . "\*.png", FR
+{
+	SplitPath, A_LoopFilePath, name, dir, ext, name_no_ext, drive
+	if InStr(name_no_ext, "scroll") then
+	{
+		ScrollSSC := ScrollSSC + 1
+		ScrollScreenshots.Push(A_LoopFilePath) ; puts file path in array
+		ScrollNames .= (StrSplit(name_no_ext, "scroll")[1]) " "
+	}
+	else
+	{
+		continue
+	}
+}
+
 CreateGui()
 return
 
@@ -136,8 +156,12 @@ LoadVariables(SettingDefaults, IniFile, IniFileSection)
 
 if (A_GuiControl == "Set Name/PFP") then
 {
-	GuiControl,, WBPFP, % WBProfilePictureFile
-	GuiControl, Move, WBPFP, w100 h100
+	if FileExist(WBProfilePictureFile) then
+	{
+		GuiControl,, WBPFP, % WBProfilePictureFile
+		GuiControl, Move, WBPFP, w100 h100
+		GuiControl, Move, WBPFP_2, x-1000 y-1000 w0 h0
+	}
 
 	if (WebhookURL && WebhookName && WBProfilePictureFile or WBProfilePictureFileSaveInput) then
 	{
@@ -448,9 +472,13 @@ CreateGui() {
 	
 	if (WBProfilePictureFile != "" && FileExist(WBProfilePictureFile)) then
 	{
-		Gui, %Gui1_Name%:Add, Picture, gEasterEgg vWBPFP x650 y183 w100 h100, % WBProfilePictureFile
+		Gui, %Gui1_Name%:Add, Picture, gEasterEgg vWBPFP AltSubmit x650 y183 w100 h100, % WBProfilePictureFile
 	}
-	;Gui, %Gui1_Name%:Add, Picture, x725 y390 w150 h150, % "E:\T7\AutoHotKey Scripts\AutoHotKey Scripts\Macro Creation\Real Rogue\Utilities\Auto Gacha Menu\ScrollScreenshots\hoppascroll.png"
+	else
+	{
+		Gui, %Gui1_Name%:Add, Picture, gEasterEgg vWBPFP x650 y183 w100 h100, 
+		Gui, %Gui1_Name%:Add, Text, gEasterEgg vWBPFP_2 x650 y183 w100 h100, Image Place Holder
+	}
 	
 	Gui, %Gui1_Name%:Add, Text, x10 y50, Gacha Guy Detection Offset
 	Gui, %Gui1_Name%:Add, Text, x10 y80, Chair Slot
@@ -466,6 +494,7 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Text, x260 y140, Force Field Wait Detection
 	Gui, %Gui1_Name%:Add, Text, x260 y170, Force Field WaitC Detection
 	Gui, %Gui1_Name%:Add, Text, x260 y200, Spell Cutoff
+	Gui, %Gui1_Name%:Add, Text, x260 y230, Hotkeys
 	
 	Gui, %Gui1_Name%:Font, c%GuiLinkColor% s10 underline, %GuiFont%
 	Gui, %Gui1_Name%:Add, Text, gLinkOpen x260 y260, Made By Akarui
@@ -518,9 +547,12 @@ CreateGui() {
 	CheckBoxHoppaCutoff := HoppaCutoff == "On"
 	CheckBoxPercCutoff := PercCutoff == "On"
 	
-	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vSnarvCutoffSaveInput Checked%CheckBoxSnarvCutoff% c%GuiTextColor% x430 y195, Snarv
-	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vHoppaCutoffSaveInput Checked%CheckBoxHoppaCutoff% c%GuiTextColor% x430 y215, Hoppa
-	Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vPercCutoffSaveInput Checked%CheckBoxPercCutoff% c%GuiTextColor% x430 y235, Perc
+	if InStr(ScrollNames, "snarv") then
+		Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vSnarvCutoffSaveInput Checked%CheckBoxSnarvCutoff% c%GuiTextColor% x430 y195, Snarv
+	if InStr(ScrollNames, "hoppa") then
+		Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vHoppaCutoffSaveInput Checked%CheckBoxHoppaCutoff% c%GuiTextColor% x430 y215, Hoppa
+	if InStr(ScrollNames, "perc") then
+		Gui, %Gui1_Name%:Add, CheckBox, gUpdateSettings vPercCutoffSaveInput Checked%CheckBoxPercCutoff% c%GuiTextColor% x430 y235, Perc
 		
 	Gui, %Gui1_Name%:Add, Button, gExpandGui x370 y255 w110 h25, Settings Info
 	
