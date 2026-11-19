@@ -4,11 +4,13 @@
 
 ### AUTOHOTKEY v1.1
 
-Not meant to be read if you somehow find this.
+If you try to change things in this macro it might be hard due to the effortless tries to make the code readable
 I'm also not sure if all the features work according to how they should.
 It will be buggy at some times due to lag and/or other things.
 I have also removed the function of some features.
 They are still in the code though.
+
+----------------------------------------------------------------------------------
 
 <h3 align="center">Instructions</h3>
 
