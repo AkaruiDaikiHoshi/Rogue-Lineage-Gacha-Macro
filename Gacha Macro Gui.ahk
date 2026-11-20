@@ -761,7 +761,10 @@ CreateGui2() {
 		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Stop||Hop"
 	
 	Gui, %Gui2_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
-	Gui, %Gui2_Name%:Add, Edit, gUpdateEasterEggSettings vPlayerCountCutoffSaveInput Number x130 y37 w40 h25, % PlayerCountCutoff
+	if (PlayerCountCutoff != "ERROR") then
+		Gui, %Gui2_Name%:Add, Edit, gUpdateEasterEggSettings vPlayerCountCutoffSaveInput Number x130 y37 w40 h25, % PlayerCountCutoff
+	else
+		Gui, %Gui2_Name%:Add, Edit, gUpdateEasterEggSettings vPlayerCountCutoffSaveInput Number x130 y37 w40 h25, 1
 	
 	Gui, %Gui2_Name%:+AlwaysOnTop +ToolWindow -Caption
 	Gui, %Gui2_Name%:Show, % "NoActivate W" Gui_Width2 " H" Gui_Height2 " X" Gui_XPos2 " Y" Gui_YPos2, Easter Egg Gui
