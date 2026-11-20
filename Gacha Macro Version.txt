@@ -1,0 +1,8 @@
+v1.14
+
+
+Akarui was here
+
+
+This is meant for the macros (Main, Gui) to check if it is up to date or not.
+That is all.
