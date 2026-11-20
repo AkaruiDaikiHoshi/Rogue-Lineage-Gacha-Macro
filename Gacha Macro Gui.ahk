@@ -21,7 +21,15 @@ for FolderIndex, FolderName in MacroFolders
 		FileCreateDir, % %FolderName%Path
 }
 
-Msgbox, I would recommend downloading the screenshots from the GitHub repo
+ScreenshotsDownloaded := false
+Loop, Files, % A_ScriptDir . "\*.png", FR
+{
+	if InStr(A_LoopFilePath, "menu") then
+		ScreenshotsDownloaded := true
+}
+
+if (!ScreenshotsDownloaded) then
+	Msgbox, I would recommend downloading the screenshots from the GitHub repo
 
 global SettingDefaults := {"WebhookURL": ""
     , "ScreenshotWebhookURL": ""
