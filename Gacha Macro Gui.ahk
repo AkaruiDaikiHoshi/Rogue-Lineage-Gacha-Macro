@@ -170,8 +170,30 @@ if (A_GuiControl == "Set Name/PFP") then
 		GuiControl, Move, WBPFP, w100 h100
 		GuiControl, Move, WBPFP_2, x-1000 y-1000 w0 h0
 	}
+	
+	Payload := ""
 
-	if (WebhookURL && WebhookName && WBProfilePictureFile or WBProfilePictureFileSaveInput) then
+	if (WebhookURL && WebhookName) then
+	{
+		Payload := "{""name"":""" WebhookName """}"
+
+		Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		Http.Open("PATCH", WebhookURL, false)
+		Http.SetRequestHeader("Content-Type", "application/json")
+		Http.Send(Payload)
+		
+		sleep, 250
+		
+		Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		Http.Open("PATCH", ScreenshotWebhookURL, false)
+		Http.SetRequestHeader("Content-Type", "application/json")
+		Http.Send(Payload)
+		sleep, 250
+	}
+	
+	Payload := ""
+	
+	if (WebhookURL && WBProfilePictureFile or WBProfilePictureFileSaveInput) then
 	{
 		if (WBProfilePictureFileSaveInput) then
 		{
@@ -183,9 +205,8 @@ if (A_GuiControl == "Set Name/PFP") then
 		}
 		
 		Payload := "{"
-		. """name"":""" WebhookName ""","
-		. """avatar"":""data:image/png;base64," Base64 """"
-		. "}"
+			. """avatar"":""data:image/png;base64," Base64 """"
+			. "}"
 
 		Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 		Http.Open("PATCH", WebhookURL, false)
