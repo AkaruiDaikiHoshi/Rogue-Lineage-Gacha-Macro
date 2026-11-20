@@ -536,8 +536,11 @@ while ((A_TickCount - ForceFieldStartTime_1) < (ForceFieldWaitTime_Miliseconds))
 		}
 	}
 	
-	if (PlayerSearch()) then
-		break
+	if (PlayerDetectionPath != "ERROR" && PlayerDetectionPath != "") then
+	{
+		if (PlayerSearch()) then
+			break
+	}
 	
 	if (TimeGainedToolTip) then
 	{
