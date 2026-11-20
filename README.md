@@ -1,6 +1,6 @@
 <h1 align="center">Rogue Lineage Gacha Macro</h1>
 
-### AUTOHOTKEY v1.1
+<h3 align="center">AUTOHOTKEY v1.1</h3>
 <h3 align="center">A macro for Rogue Lineage's gacha system that's for either public servers or 23's (Uses FF).</h3>
 
 If you try to change things in this macro it might be hard due to the effortless tries to make the code readable
