@@ -51,7 +51,9 @@ global SettingDefaults := {"WebhookURL": ""
 	, "GachaGuyDetectionOffset": "100"
 	, "SnarvCutoff": "Off"
 	, "HoppaCutoff": "Off"
-	, "PercCutoff": "Off"}
+	, "PercCutoff": "Off"
+	, "StartHotkey": "f3"
+	, "StopHotkey": "f7"}
 	
 global SettingEasterEggs := {"ErrorIgnore": false
 	, "DisconnectDetection": "Off"
@@ -175,6 +177,7 @@ if (A_GuiControl == "Set Name/PFP") then
 
 	if (WebhookURL && WebhookName) then
 	{
+		WebhookName := WebhookNameSaveInput
 		Payload := "{""name"":""" WebhookName """}"
 
 		Http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -385,6 +388,11 @@ if (A_GuiControl == "Spell Cutoff Details") then
 	Msgbox % AboutSpellCutoffText
 }
 else
+if (A_GuiControl == "Hotkeys Details") then
+{
+	Msgbox % AboutHotkeysText
+}
+else
 if (A_GuiControl == "Spell Cutoff") then
 {
 	Msgbox, 15 wanted to name this along the lines of "femboy spell"
@@ -572,6 +580,9 @@ CreateGui() {
 		
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vForceFieldWaitCheckDetectionSaveInput Number x436 y165 w40, % ForceFieldWaitCheckDetection
 	
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vStartHotkeySaveInput x320 y226 w35 h25, % StartHotkey
+	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vStopHotkeySaveInput x360 y226 w35 h25, % StopHotkey
+	
 	CheckBoxSnarvCutoff := SnarvCutoff == "On"
 	CheckBoxHoppaCutoff := HoppaCutoff == "On"
 	CheckBoxPercCutoff := PercCutoff == "On"
@@ -609,7 +620,22 @@ CreateGui() {
 	
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vWebhookURLSaveInput x610 y13 w270 h25, % WebhookURL
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vScreenshotWebhookURLSaveInput x685 y43 w195 h25, % ScreenshotWebhookURL
-	Gui, %Gui1_Name%:Add, Edit, vWebhookNameSaveInput x555 y113 w150 h25, % WebhookName
+	
+	if (WebhookURL != "ERROR" && WebhookURL != "" && WebhookName == "" or WebhookName == "ERROR") then
+	{
+		whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		whr.Open("GET", WebhookURL, true)
+		whr.Send()
+		whr.WaitForResponse()
+		FullWBURLText := whr.ResponseText
+		WBNameStart := InStr(FullWBURLText, """name"":") + 8
+		WBNameEnd := InStr(FullWBURLText, """", false, WBNameStart)
+
+		WBName := SubStr(FullWBURLText, WBNameStart, WBNameEnd - WBNameStart)
+		Gui, %Gui1_Name%:Add, Edit, vWebhookNameSaveInput x555 y113 w150 h25, % WBName
+	}
+	else
+		Gui, %Gui1_Name%:Add, Edit, vWebhookNameSaveInput x555 y113 w150 h25, % WebhookName
 	Gui, %Gui1_Name%:Add, Edit, gUpdateSettings vDiscordUserIDSaveInput Number x520 y200 w120 h25, % DiscordUserID
 	
 	; GUI 1.5 -------------------------------------
@@ -664,6 +690,9 @@ CreateGui() {
 	AboutDisconnectDetectionText := "DisconnectDetection:`nThis will make you rejoin if you are disconnected for whatever reason."
 	AboutSpellCutoffText := "Spell Cutoff:`nThe macro will stop after it has:`n"
 	AboutSpellCutoffText .= "Detected a spell you have checked off and when it menus."
+	AboutHotkeysText := "Hotkeys:`nThe left one is where you will put the hotkey to start it."
+	AboutHotkeysText .= " The right one is where you will put the hotkey to stop it."
+	AboutHotkeysText .= " Hotkey Examples: f3, t, End, ["
 	
 	; Gui Adds
 	
@@ -682,6 +711,7 @@ CreateGui() {
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y419 h25, Force Field Wait Detection Details
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y454 h25, Force Field WaitC Detection Details
 	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y489 h25, Spell Cutoff Details
+	Gui, %Gui1_Name%:Add, Button, gShowSettingDetails x270 y524 h25, Hotkeys Details
 	
 	Gui, %Gui1_Name%:Add, Text, x270 y550 w220 +Wrap, Theres something you can click on for a little easter egg...
 	
@@ -756,9 +786,12 @@ CreateGui2() {
 		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vScrollAutoPopSaveInput x110 y7 w40, % "Off||On"
 		
 	if (PlayerDetectionPath == "Hop") then
-		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Stop|Hop||"
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Off|Stop|Hop||"
 	else
-		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Stop||Hop"
+	if (PlayerDetectionPath == "Stop") then
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Off|Stop||Hop"
+	else
+		Gui, %Gui2_Name%:Add, DropDownList, gUpdateEasterEggSettings vPlayerDetectionPathSaveInput x145 y67 w60, % "Off||Stop||Hop"
 	
 	Gui, %Gui2_Name%:Font, c%GuiMainColor% s10 norm, %GuiFont%
 	if (PlayerCountCutoff != "ERROR") then
