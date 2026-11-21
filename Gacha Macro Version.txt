@@ -1,4 +1,6 @@
 Macro Version: v1.14
+Gui Version: v1.14
+Ini Version: v1.14
 
 
 Akarui was here
