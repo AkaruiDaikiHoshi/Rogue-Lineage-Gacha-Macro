@@ -1,3 +1,5 @@
+CheckForNewVersions("v1.15")
+
 #SingleInstance Force
 SetWorkingDir %A_ScriptDir%
 
@@ -846,6 +848,25 @@ LoadVariables(ByRef SettingDefaults, ByRef IniFile, ByRef IniFileSection) {
 }
 
 
+CheckForNewVersions(FileVersion) {
+	MacroVersionsLink := "https://raw.githubusercontent.com/AkaruiDaikiHoshi/Rogue-Lineage-Gacha-Macro/refs/heads/Gacha-Macro/Gacha%20Macro%20Version.txt"
+	whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+	whr.Open("GET", MacroVersionsLink, true)
+	whr.Send()
+	whr.WaitForResponse()
+	
+	MacroVersions := whr.ResponseText
+	if RegExMatch(MacroVersions, "Macro Version: (v\d+\.\d+)", match) then
+		MacroVersion := match1
+		
+	if RegExMatch(MacroVersions, "Gui Version: (v\d+\.\d+)", match) then
+		GuiVersion := match1
+	
+	if (FileVersion != GuiVersion) then
+		Msgbox, % "This gui is outdated. I recommend downloading the updated ones on the GitHub."
+}
+
+
 FileToBase64(FilePath)
 {
     File := FileOpen(FilePath, "r")
@@ -874,56 +895,6 @@ FileToBase64(FilePath)
         , "UInt*", Length)
 
     return Base64
-}
-
-
-SystemTime()
-{
-	SetBatchLines, -1
-	Process Priority,, High
-    freq := 0, tick := 0
-    If (!freq)
-        DllCall("QueryPerformanceFrequency", "Int64*", freq)
-    DllCall("QueryPerformanceCounter", "Int64*", tick)
-    Return tick / freq * 1000
-}
-
-
-HyperSleep(value)
-{
-	SetBatchLines, -1
-	Process Priority,, High
-    s_begin_time := SystemTime()
-    freq := 0, t_current := 0
-    DllCall("QueryPerformanceFrequency", "Int64*", freq)
-    s_end_time := (s_begin_time + value) * freq / 1000 
-    While, (t_current < s_end_time)
-    {
-        If (s_end_time - t_current) > 20000
-        {
-            DllCall("Winmm.dll\timeBeginPeriod", UInt, 1)
-            DllCall("Sleep", "UInt", 1)
-            DllCall("Winmm.dll\timeEndPeriod", UInt, 1)
-            DllCall("QueryPerformanceCounter", "Int64*", t_current)
-        }
-        Else
-            DllCall("QueryPerformanceCounter", "Int64*", t_current)
-    }
-}
-
-
-CoreSleep(s)
-{
-    SetBatchLines, -1
-    Process Priority,, High
-
-    DllCall("QueryPerformanceFrequency", "Int64*", freq)
-    DllCall("QueryPerformanceCounter", "Int64*", CounterBefore)
-    
-    While (((counterAfter - CounterBefore) / freq * 1000) < s)
-        DllCall("QueryPerformanceCounter", "Int64*", CounterAfter)
-
-    return ((counterAfter - CounterBefore) / freq * 1000) 
 }
 
 
