@@ -1,3 +1,5 @@
+CheckForNewVersions("v1.15")
+
 #IfWinActive, ahk_exe RobloxPlayerBeta.exe
 #SingleInstance Force
 SetWorkingDir %A_ScriptDir%
@@ -20,6 +22,12 @@ DllCall("ntdll\ZwSetTimerResolution", "UInt", 5000, "UInt", 1, "UInt*", currentR
 CoordMode, Mouse, Screen
 CoordMode, Pixel, Screen
 CoordMode, ToolTip, Screen
+
+SetUiNavi()
+; The whole thing above does:
+; gets the roblox settings file
+; checks to see if you have ui navi set to true
+; if not then it sets it to true
 
 global IniFile := A_ScriptDir . "\Menu Gacha Macro Settings.ini"
 global IniFileSection := "Stored Variables"
@@ -48,6 +56,8 @@ IniRead, DiscordUserID, % IniFile, % IniFileSection, DiscordUserID
 IniRead, SnarvCutoff, % IniFile, % IniFileSection, SnarvCutoff
 IniRead, HoppaCutoff, % IniFile, % IniFileSection, HoppaCutoff
 IniRead, PercCutoff, % IniFile, % IniFileSection, PercCutoff
+IniRead, StartHotkey, % IniFile, % IniFileSection, StartHotkey
+IniRead, StopHotkey, % IniFile, % IniFileSection, StopHotkey
 
 IniRead, ErrorIgnore, % IniFile, % IniFileSection, ErrorIgnore
 IniRead, DisconnectDetection, % IniFile, % IniFileSection, DisconnectDetection
@@ -62,6 +72,20 @@ global HasSilverCutoff := SilverCutoff != "None"
 global HasSnarvCutoff := SnarvCutoff == "On"
 global HasHoppaCutoff := HoppaCutoff == "On"
 global HasPercCutoff := PercCutoff == "On"
+if (StartHotkey != "ERROR" && StartHotkey != "" && StopHotkey != "ERROR" && StopHotkey != "") then
+{
+	Hotkey, IfWinActive, ahk_exe RobloxPlayerBeta.exe
+	Hotkey, % StartHotkey, StartGachaMacro, On
+	StartHotkeyError := ErrorLevel
+	Hotkey, % StopHotkey, StopGachaMacro, On
+	StopHotkeyError := ErrorLevel
+	
+	if (StartHotkeyError == 2) then
+		Msgbox, % "START hotkey is not supported, please pick a different one."
+	else
+	if (StopHotkeyError == 2) then
+		Msgbox, % "STOP hotkey is not supported, please pick a different one."
+}
 
 global DisconnectDetection := DisconnectDetection == "On" ; idk
 global ScrollAutoPop := ScrollAutoPop == "On"
@@ -174,7 +198,7 @@ global FirstForceFieldDetected := false
 global ForceFieldSecondsLeft := 0
 global ForceFieldMilisecondsLeft := 0
 
-global GachaGuyColors := ["0xF5A0B7", "0xF6A3B8", "0xF5A2B6", "0x88444E", "0x7C0AAD"] ; , "0xFFDFC4"]
+global GachaGuyColors := ["0xF5A0B7", "0xF6A3B8", "0xF5A2B6", "0x88444E", "0x7C0AAD", "0xF9DDC8", "0xBFBEA1"] ; , "0xFFDFC4"]
 global GachaGuyColors := ["0xF5A0B7"]
 global GGDO := GachaGuyDetectionOffset ; shorter name
 global GachaGuyDetectionSections := [0 + GGDO, 0 + GGDO, A_ScreenWidth / 2.23, A_ScreenHeight - GGDO ; Left Section
@@ -209,7 +233,7 @@ global PlayerSearchDetectionSections := [0, A_ScreenHeight / 14.4, A_ScreenWidth
 return
 
 
-$f3::
+StartGachaMacro:
 WinGet, RobloxID, ID, A
 MacroStartTime := A_TickCount ; sleep timer, etc
 LastScreenshot := A_TickCount ; so screenshotinterval doesnt happen on first macroindex
@@ -353,11 +377,43 @@ if (GachaGuyCount >= 1) then
 	
 	sleep, 3000 ; Delay to let the captcha pop up
 	
-	UiNavigation("") ; captcha
+	SendInput, \ ; captcha
+	sleep, 25
+	Loop, 3
+	{
+		SendInput, {left}
+		sleep, 25
+	}
+	SendInput, {right}
+	sleep, 25
+	Loop, 3
+	{
+		SendInput, {up}
+		sleep, 25
+	}
+	SendInput, {enter down}
+	sleep, 25
+	SendInput, {enter up}
+	sleep, 25
+	SendInput, \
 	
 	sleep, 2000
 	
-	UiNavigation("") ; first dialogue
+	;UiNavigation("") ; first dialogue
+	SendInput, \
+	sleep, 25
+	Loop, 3
+	{
+		SendInput, {left}
+		sleep, 25
+	}
+	SendInput, {right}
+	sleep, 25
+	SendInput, {enter down}
+	sleep, 25
+	SendInput, {enter up}
+	sleep, 25
+	SendInput, \
 		
 	sleep, 6000
 	
@@ -365,12 +421,14 @@ if (GachaGuyCount >= 1) then
 	sleep, 25
 	Loop, 3
 	{
-		SendInput, {up}
+		SendInput, {left}
 		sleep, 25
 	}
-	SendInput, {down}
+	SendInput, {right}
 	sleep, 25
-	SendInput, {enter}
+	SendInput, {enter down}
+	sleep, 25
+	SendInput, {enter up}
 	sleep, 25
 	SendInput, \
 	;UiNavigation("down") last dialogue
@@ -599,6 +657,11 @@ if (SleepTimer) then
 sleep, % 10 * 1000 ; delay so the play button can show up again.
 ResetVariables()
 }
+return
+
+
+StopGachaMacro:
+reload
 return
 
 
@@ -835,14 +898,80 @@ SendWebhook(Message := "", Ping := false, ImagePath := "") {
 }
 
 
+SetUiNavi() {
+	if InStr(A_AppData, "Roaming") then
+	{
+		SplitPath, A_AppData, name, dir, ext, name_no_ext, drive
+	}
+	global RobloxADPath := dir . "\Local\Roblox"
+	Loop, Files, %RobloxADPath%\GlobalBasicSettings*.xml
+	{
+		if RegExMatch(A_LoopFileName, "^GlobalBasicSettings(_\d+)?\.xml$")
+		{
+			if FileExist(A_LoopFileFullPath)
+			{
+				global GlobalBasicSettingsFilePath := A_LoopFileFullPath
+				Attributes := FileExist(GlobalBasicSettingsFilePath)
+				FileSetAttrib, -R, % GlobalBasicSettingsFilePath
+				break
+			}
+		}
+	}
+	FileRead, Contents, %GlobalBasicSettingsFilePath%
+	if RegExMatch(Contents, "<bool name=""UiNavigationKeyBindEnabled"">(?!true</bool>)(.*?)</bool>", match) then
+	{
+		global UiNavi := match1
+		Contents := RegExReplace(Contents, "<bool name=""UiNavigationKeyBindEnabled"">(?!true</bool>)(.*?)</bool>", "<bool name=""UiNavigationKeyBindEnabled"">true</bool>")
+		FileDelete, %GlobalBasicSettingsFilePath%
+		FileAppend, %Contents%, %GlobalBasicSettingsFilePath%
+		Loop
+		{
+			if FileExist(GlobalBasicSettingsFilePath) then
+			{
+				Attributes := FileExist(GlobalBasicSettingsFilePath)
+				FileSetAttrib, +R, % GlobalBasicSettingsFilePath
+				break
+			}
+			sleep, 100
+		}
+		FileSetAttrib, +R, % GlobalBasicSettingsFilePath
+		
+		if WinExist("ahk_exe RobloxPlayerBeta.exe") then
+			Msgbox, % "Please fully restart Roblox for the macro to work."
+	}
+	FileSetAttrib, +R, % GlobalBasicSettingsFilePath
+}
+
+
+CheckForNewVersions(FileVersion) {
+	MacroVersionsLink := "https://raw.githubusercontent.com/AkaruiDaikiHoshi/Rogue-Lineage-Gacha-Macro/refs/heads/Gacha-Macro/Gacha%20Macro%20Version.txt"
+	whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+	whr.Open("GET", MacroVersionsLink, true)
+	whr.Send()
+	whr.WaitForResponse()
+	
+	MacroVersions := whr.ResponseText
+	if RegExMatch(MacroVersions, "Macro Version: (v\d+\.\d+)", match) then
+		MacroVersion := match1
+		
+	if RegExMatch(MacroVersions, "Gui Version: (v\d+\.\d+)", match) then
+		GuiVersion := match1
+	
+	if (FileVersion != MacroVersion) then
+		Msgbox, % "This macro is outdated. I recommend downloading the updated ones on the GitHub."
+}
+
+
 #If
 
 
+/*
 $f5::
 MouseGetPos, MouseX, MouseY,
 PixelGetColor, Color, % MouseX, % MouseY
 Msgbox % Color
 return
+*/
 
 
 *$f7::
