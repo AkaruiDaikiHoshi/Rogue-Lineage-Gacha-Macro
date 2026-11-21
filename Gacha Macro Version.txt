@@ -1,10 +1,9 @@
 Macro Version: v1.14
 Gui Version: v1.14
-Ini Version: v1.14
 
 
 Akarui was here
 
 
-This is meant for the macros (Main, Gui) (and the ini file because I change that sometimes) to check if it is up to date or not.
+This is meant for the macros (Main, Gui) to check if it is up to date or not.
 That is all.
