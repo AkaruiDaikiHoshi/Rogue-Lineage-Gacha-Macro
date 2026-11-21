@@ -1,5 +1,5 @@
-Macro Version: v1.14
-Gui Version: v1.14
+Macro Version: v1.15
+Gui Version: v1.15
 
 
 Akarui was here
