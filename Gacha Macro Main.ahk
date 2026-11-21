@@ -67,7 +67,9 @@ global DisconnectDetection := DisconnectDetection == "On" ; idk
 global ScrollAutoPop := ScrollAutoPop == "On"
 if (PlayerCountCutoff == "ERROR") then
 	PlayerCountCutoff := 1
-global PlayerDetectionStop := PlayerDetectionPath == "Stop"
+
+if (PlayerDetectionPath != "Off") then
+	global PlayerDetectionStop := PlayerDetectionPath == "Stop"
 
 if (!A_IsAdmin && InputBlock) then
 {
@@ -185,6 +187,7 @@ global GachaGuySpinStop := false
 global GGx := 0 ; gacha guy found x
 global GGy := 0 ; gacha guy found y
 global GachaGuyErrorLevel := 1
+global NoGachaGuyIndex := [] ; if no detect then it will go here and put the MacroIndex
 
 global ScrollDetection_TopLeftCorner := [A_ScreenWidth // 4.09, A_ScreenHeight // 2.41]
 global ScrollDetection_BottomRightCorner := [A_ScreenWidth // 1.33, A_ScreenHeight // 1.08]
@@ -195,11 +198,14 @@ global SilverDetection_BottomRightCorner := [A_ScreenWidth // 15.23, A_ScreenHei
 global SilverDetectionVariation := 120
 global LowSilver := false
 
-global NoGachaGuyIndex := [] ; if no detect then it will go here and put the MacroIndex
-
 global ScreenshotInterval_Miliseconds := ((ScreenshotInterval * 1000) * 60)
 global ScreenshotIntervalWaitOffset := 10 * 1000 ; makes it 10 seconds
 global LastScreenshot := 0
+
+global PlayerSearchDetectionSections := [0, A_ScreenHeight / 14.4, A_ScreenWidth / 2.57, A_ScreenHeight / 1.08 ; Left Section
+		, 0, A_ScreenHeight / 14.4, A_ScreenWidth / 1.14, A_ScreenHeight / 3.17 ; Top Section
+		, A_ScreenWidth / 1.63, A_ScreenHeight / 14.4, A_ScreenWidth / 1.14, A_ScreenHeight / 1.08 ; Right Section
+		, 0, A_ScreenHeight / 1.41, A_ScreenWidth / 1.14, A_ScreenHeight / 1.16] ; Bottom Section
 return
 
 
@@ -347,15 +353,27 @@ if (GachaGuyCount >= 1) then
 	
 	sleep, 3000 ; Delay to let the captcha pop up
 	
-	UiNavigation("down")
+	UiNavigation("") ; captcha
 	
 	sleep, 2000
 	
-	UiNavigation("down")
+	UiNavigation("") ; first dialogue
 		
 	sleep, 6000
 	
-	UiNavigation("down")
+	SendInput, \
+	sleep, 25
+	Loop, 3
+	{
+		SendInput, {up}
+		sleep, 25
+	}
+	SendInput, {down}
+	sleep, 25
+	SendInput, {enter}
+	sleep, 25
+	SendInput, \
+	;UiNavigation("down") last dialogue
 	
 	; ^ the downs are because of the menu button.
 	
@@ -472,7 +490,7 @@ if !(LowSilver) then
 sleep, 1000 ; let checks happen
 SendInput, `` ; close inv
 
-if (TimeGainedToolTip) then
+if (TimeGainedToolTip && PlayerDetectionPath != "Stop" && PlayerDetectionPath != "Hop") then
 {
 	; TimeGained gets turned into seconds and minutes
 	TimeGainedOutputText := "Time Gained: " Round((TimeGained / 1000), 0) " Seconds (" Round((TimeGained / 60000), 2) " Minute(s))"
@@ -542,7 +560,7 @@ while ((A_TickCount - ForceFieldStartTime_1) < (ForceFieldWaitTime_Miliseconds))
 			break
 	}
 	
-	if (TimeGainedToolTip) then
+	if (TimeGainedToolTip && PlayerDetectionPath != "Stop" && PlayerDetectionPath != "Hop") then
 	{
 		ForceFieldSecondsLeft := Round((ForceFieldWaitTime_Miliseconds - (A_TickCount - ForceFieldStartTime_1)) / 1000, 0)
 		ToolTip, % "Waiting: " ForceFieldSecondsLeft " seconds...", % ToolTipCords[3], % ToolTipCords[4], 2
@@ -686,17 +704,22 @@ PlayerSearch() {
 	
 	PlayerCount := 0
 	
-	Loop, 1
+	for index, value in PlayerNameColors
 	{
-		for index, value in PlayerNameColors
+		for PSi, Cords in PlayerSearchDetectionSections ; im using this so it doesnt detect ff
 		{
-			PixelSearch, Plx, Ply, % A_ScreenWidth / 29.53, % A_ScreenHeight / 16.61, % A_ScreenWidth / 1.14, % A_ScreenHeight / 1.2, % value, % PlayerNameDetectionVariation, Fast
-			if (ErrorLevel == 0) then
-				PlayerCount++
+			Cords := PlayerSearchDetectionSections ; makes it so that the pixel search doesnt go too far
+			if (PSi == 1 or PSi == 5 or PSi == 9 or PSi == 13) then
+			{
+				PixelSearch, Plx, Ply, % Cords[PSi], % Cords[PSi + 1], % Cords[PSi + 2], % Cords[PSi + 3], % value, % PlayerNameDetectionVariation, Fast
+				if (ErrorLevel == 0) then
+					PlayerCount++
+			}
 			
 			if (PlayerCount >= PlayerCountCutoff) then
 				break
 		}
+		
 		if (PlayerCount >= PlayerCountCutoff) then
 			break
 	}
